@@ -1,15 +1,15 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { PrivateLayout } from './PrivateLayout'
 import { ProtectedRoute } from './ProtectedRoute'
+import { RootRedirect } from './RootRedirect'
 import { DashboardPage } from '../pages/DashboardPage'
-import { HomePage } from '../pages/HomePage'
 import { LoginPage } from '../pages/LoginPage'
 import { PrivatePlaceholderPage } from '../pages/PrivatePlaceholderPage'
 
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/dashboard"

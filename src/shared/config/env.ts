@@ -12,4 +12,13 @@ const envSchema = z.object({
   VITE_API_BASE_URL: apiBaseUrlSchema,
 })
 
-export const env = envSchema.parse(import.meta.env)
+const parsedEnv = envSchema.safeParse(import.meta.env)
+
+if (!parsedEnv.success) {
+  throw new Error(
+    'Configuração de ambiente inválida. Defina VITE_API_BASE_URL em .env local. Para desenvolvimento com proxy, use VITE_API_BASE_URL=/.',
+    { cause: parsedEnv.error },
+  )
+}
+
+export const env = parsedEnv.data
