@@ -7,6 +7,7 @@ import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { PrivatePlaceholderPage } from '../pages/PrivatePlaceholderPage'
 import { PublicBookingPage } from '../pages/PublicBookingPage'
+import { PublicLinkPage } from '../pages/PublicLinkPage'
 import { ServicesPage } from '../pages/ServicesPage'
 
 export function AppRouter() {
@@ -34,15 +35,7 @@ export function AppRouter() {
           }
         />
         <Route path="availability" element={<AvailabilityPage />} />
-        <Route
-          path="public-link"
-          element={
-            <PrivatePlaceholderPage
-              title="Link público"
-              description="O link público de agendamento será exibido aqui quando a configuração da empresa estiver disponível."
-            />
-          }
-        />
+        <Route path="public-link" element={<PublicLinkPage />} />
       </Route>
       <Route path="/:slug" element={<PublicBookingPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />

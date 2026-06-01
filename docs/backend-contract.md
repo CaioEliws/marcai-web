@@ -320,15 +320,28 @@ Regras frontend:
 
 Representa a empresa do usuário autenticado.
 
-Campos esperados:
+Endpoint privado:
 
 ```txt
-id
-name
-slug
-phone
-address
-active
+GET /api/v1/dashboard/business
+```
+
+Response:
+
+```json
+{
+  "id": "uuid",
+  "name": "Barbearia do Caio",
+  "slug": "barbearia-do-caio",
+  "description": "Cortes masculinos, barba e acabamento.",
+  "phone": "11999999999",
+  "address": "Rua Exemplo, 123",
+  "city": "Indaiatuba",
+  "state": "SP",
+  "active": true,
+  "createdAt": "2026-01-01T10:00:00",
+  "updatedAt": "2026-01-01T10:30:00"
+}
 ```
 
 Regras frontend:
@@ -336,6 +349,7 @@ Regras frontend:
 * não permitir alteração de `id` pela UI
 * não usar `businessId` como parâmetro de autorização privada
 * exibir `slug` como link público quando disponível
+* montar link público com origem atual do frontend e `slug`
 * não expor dados internos desnecessários
 
 ---
