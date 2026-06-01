@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { ApiError } from '@/shared/api/httpClient'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Button } from '@/shared/components/ui/button'
@@ -13,7 +13,7 @@ import {
 } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
-import { useLoginMutation } from '@/features/auth/hooks/useAuth'
+import { useLoginMutation, useSessionQuery } from '@/features/auth/hooks/useAuth'
 import { loginPayloadSchema } from '@/features/auth/schemas/auth.schema'
 
 type FieldErrors = Partial<Record<'email' | 'password', string>>
@@ -34,6 +34,7 @@ function getLoginErrorMessage(error: unknown) {
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const sessionQuery = useSessionQuery()
   const loginMutation = useLoginMutation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -66,6 +67,10 @@ export function LoginPage() {
   }
 
   const isSubmitting = loginMutation.isPending
+
+  if (sessionQuery.isSuccess) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <main className="grid min-h-svh place-items-center bg-muted/30 px-4 py-10">
