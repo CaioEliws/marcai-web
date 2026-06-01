@@ -13,7 +13,12 @@ import {
 } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
-import { useCurrentBusinessQuery } from '@/features/business/hooks/useBusiness'
+import {
+  useCurrentBusinessQuery,
+  useUpdateBusinessMutation,
+} from '@/features/business/hooks/useBusiness'
+import { businessSlugSchema } from '@/features/business/schemas/business.schema'
+import type { Business } from '@/features/business/types/business.type'
 
 function getSafeErrorMessage(error: unknown) {
   if (error instanceof ApiError) {
@@ -28,6 +33,14 @@ function getSafeErrorMessage(error: unknown) {
     if (error.status === 404) {
       return 'Empresa não encontrada para esta conta.'
     }
+
+    if (error.status === 400) {
+      return 'Revise o slug informado e tente novamente.'
+    }
+
+    if (error.status === 409) {
+      return 'Este slug já está em uso. Escolha outro.'
+    }
   }
 
   if (error instanceof ApiContractError) {
@@ -37,12 +50,84 @@ function getSafeErrorMessage(error: unknown) {
   return 'Não foi possível carregar o link público. Tente novamente em instantes.'
 }
 
+function getSlugValidationMessage() {
+  return 'Use 3 a 80 caracteres: letras minúsculas, números e hífen, sem espaços, acentos ou hífen no início/fim.'
+}
+
+function toUpdatePayload(business: Business, slug: string) {
+  return {
+    address: business.address,
+    city: business.city,
+    description: business.description,
+    name: business.name,
+    phone: business.phone,
+    slug,
+    state: business.state,
+  }
+}
+
 export function PublicLinkPage() {
   const businessQuery = useCurrentBusinessQuery()
+  const updateBusinessMutation = useUpdateBusinessMutation()
   const inputRef = useRef<HTMLInputElement>(null)
+  const slugInputRef = useRef<HTMLInputElement>(null)
   const [copyMessage, setCopyMessage] = useState<string | null>(null)
+  const [isEditingSlug, setIsEditingSlug] = useState(false)
+  const [slugDraft, setSlugDraft] = useState('')
+  const [slugError, setSlugError] = useState<string | null>(null)
+  const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const business = businessQuery.data
-  const publicLink = business ? `${window.location.origin}/${business.slug}` : ''
+  const previewSlug = business
+    ? isEditingSlug
+      ? slugDraft
+      : business.slug
+    : ''
+  const publicLink = previewSlug ? `${window.location.origin}/${previewSlug}` : ''
+
+  function handleStartEditingSlug() {
+    if (!business) {
+      return
+    }
+
+    setSlugDraft(business.slug)
+    setSlugError(null)
+    setSaveMessage(null)
+    setCopyMessage(null)
+    setIsEditingSlug(true)
+  }
+
+  function handleCancelEditingSlug() {
+    setSlugDraft('')
+    setSlugError(null)
+    setIsEditingSlug(false)
+  }
+
+  async function handleSaveSlug() {
+    if (!business) {
+      return
+    }
+
+    setSlugError(null)
+    setSaveMessage(null)
+
+    const parsedSlug = businessSlugSchema.safeParse(slugDraft)
+
+    if (!parsedSlug.success) {
+      setSlugError(getSlugValidationMessage())
+      return
+    }
+
+    try {
+      await updateBusinessMutation.mutateAsync(
+        toUpdatePayload(business, parsedSlug.data),
+      )
+      setSlugDraft('')
+      setIsEditingSlug(false)
+      setSaveMessage('Slug atualizado com sucesso.')
+    } catch (error) {
+      setSlugError(getSafeErrorMessage(error))
+    }
+  }
 
   async function handleCopyLink() {
     setCopyMessage(null)
@@ -111,6 +196,12 @@ export function PublicLinkPage() {
 
       {business ? (
         <>
+          {saveMessage ? (
+            <Alert>
+              <AlertDescription>{saveMessage}</AlertDescription>
+            </Alert>
+          ) : null}
+
           {!business.active ? (
             <Alert className="border-destructive/50 text-destructive">
               <AlertDescription>
@@ -134,10 +225,60 @@ export function PublicLinkPage() {
             </CardHeader>
             <CardContent className="grid gap-5">
               <div className="grid gap-2">
-                <Label>Slug</Label>
-                <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
-                  {business.slug}
+                <Label htmlFor="business-slug">Slug</Label>
+                <Input
+                  ref={slugInputRef}
+                  id="business-slug"
+                  value={previewSlug}
+                  onChange={(event) => {
+                    setSlugDraft(event.target.value)
+                    setSlugError(null)
+                    setSaveMessage(null)
+                  }}
+                  readOnly={!isEditingSlug}
+                  aria-invalid={Boolean(slugError)}
+                  aria-describedby={
+                    slugError ? 'business-slug-error' : 'business-slug-help'
+                  }
+                  className="font-mono text-sm"
+                  maxLength={80}
+                />
+                <p id="business-slug-help" className="text-sm text-muted-foreground">
+                  Alterar o slug muda o link público e pode quebrar links antigos
+                  já compartilhados.
                 </p>
+                {slugError ? (
+                  <p id="business-slug-error" className="text-sm text-destructive">
+                    {slugError}
+                  </p>
+                ) : null}
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  {isEditingSlug ? (
+                    <>
+                      <Button
+                        type="button"
+                        onClick={() => void handleSaveSlug()}
+                        disabled={updateBusinessMutation.isPending}
+                      >
+                        {updateBusinessMutation.isPending
+                          ? 'Salvando...'
+                          : 'Salvar'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancelEditingSlug}
+                        disabled={updateBusinessMutation.isPending}
+                      >
+                        Cancelar
+                      </Button>
+                    </>
+                  ) : (
+                    <Button type="button" onClick={handleStartEditingSlug}>
+                      Editar slug
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div className="grid gap-2">

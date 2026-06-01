@@ -324,6 +324,21 @@ Endpoint privado:
 
 ```txt
 GET /api/v1/dashboard/business
+PUT /api/v1/dashboard/business
+```
+
+Update payload:
+
+```json
+{
+  "name": "Barbearia do Caio",
+  "slug": "barbearia-do-caio",
+  "description": "Cortes masculinos, barba e acabamento.",
+  "phone": "11999999999",
+  "address": "Rua Exemplo, 123",
+  "city": "Indaiatuba",
+  "state": "SP"
+}
 ```
 
 Response:
@@ -350,6 +365,9 @@ Regras frontend:
 * não usar `businessId` como parâmetro de autorização privada
 * exibir `slug` como link público quando disponível
 * montar link público com origem atual do frontend e `slug`
+* validar slug antes de enviar: 3 a 80 caracteres, letras minúsculas, números e hífen
+* ao editar apenas o slug, preservar os demais campos atuais no payload do `PUT`
+* tratar `409` como slug já utilizado
 * não expor dados internos desnecessários
 
 ---
