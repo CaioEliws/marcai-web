@@ -586,27 +586,52 @@ Regras:
 
 Representa agendamento.
 
-Campos esperados:
+Endpoints privados:
 
 ```txt
-id
-business
-client
-serviceItem
-date
-startTime
-endTime
-status
+GET   /api/v1/dashboard/appointments
+GET   /api/v1/dashboard/appointments/by-date?date=YYYY-MM-DD
+GET   /api/v1/dashboard/appointments/{id}
+PATCH /api/v1/dashboard/appointments/{id}/cancel
+PATCH /api/v1/dashboard/appointments/{id}/complete
+PATCH /api/v1/dashboard/appointments/{id}/no-show
 ```
 
-Status esperados:
+PATCH actions não recebem body.
+
+Response:
+
+```json
+{
+  "id": "uuid",
+  "clientId": "uuid",
+  "clientName": "João Silva",
+  "clientPhone": "11999999999",
+  "serviceId": "uuid",
+  "serviceName": "Corte masculino",
+  "servicePrice": 40.00,
+  "serviceDurationMinutes": 30,
+  "appointmentDate": "2026-06-10",
+  "startTime": "09:00:00",
+  "endTime": "09:30:00",
+  "status": "SCHEDULED",
+  "notes": null,
+  "createdAt": "2026-06-01T10:00:00",
+  "updatedAt": "2026-06-01T10:30:00"
+}
+```
+
+Status possíveis:
 
 ```txt
 SCHEDULED
+CONFIRMED
 COMPLETED
 CANCELED
 NO_SHOW
 ```
+
+`CONFIRMED` existe no enum do backend, mas não há endpoint privado para confirmar. O frontend deve tratar como status possível de exibição, sem ação específica.
 
 Status que bloqueia conflito:
 
@@ -630,6 +655,8 @@ Regras frontend:
 * invalidar cache após alteração
 * tratar conflito de horário com `409`
 * não enviar `businessId`
+* não criar endpoint inexistente de confirmar
+* não criar criação/edição privada de agendamento sem contrato específico
 
 ---
 
