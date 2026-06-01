@@ -366,22 +366,65 @@ Regras frontend:
 
 Representa serviço oferecido pela empresa.
 
-Campos esperados:
+Endpoints privados:
 
 ```txt
-id
-business
-name
-price
-durationMinutes
-active
+POST  /api/v1/dashboard/services
+GET   /api/v1/dashboard/services
+GET   /api/v1/dashboard/services/active
+GET   /api/v1/dashboard/services/{id}
+PUT   /api/v1/dashboard/services/{id}
+PATCH /api/v1/dashboard/services/{id}/disable
+PATCH /api/v1/dashboard/services/{id}/enable
+```
+
+Não existe `DELETE`; remoção lógica deve usar `disable`.
+
+Create payload:
+
+```json
+{
+  "name": "Corte masculino",
+  "description": "Corte tradicional",
+  "price": 50.00,
+  "durationMinutes": 30
+}
+```
+
+Update payload:
+
+```json
+{
+  "name": "Barba",
+  "description": "Barba completa",
+  "price": 40.00,
+  "durationMinutes": 25,
+  "active": true
+}
+```
+
+Response:
+
+```json
+{
+  "id": "uuid",
+  "name": "Corte masculino",
+  "description": "Corte tradicional",
+  "price": 50.00,
+  "durationMinutes": 30,
+  "active": true,
+  "createdAt": "2026-01-01T10:00:00",
+  "updatedAt": "2026-01-01T10:00:00"
+}
 ```
 
 Regras de negócio:
 
-* duração maior que zero
-* duração menor ou igual a 12 horas
-* preço não pode ser negativo
+* `name` obrigatório, entre 2 e 120 caracteres
+* `description` opcional, máximo 500 caracteres
+* `price` pode ser `null`, mas não pode ser negativo quando enviado
+* `durationMinutes` obrigatório, maior que zero e menor ou igual a 720
+* `active` obrigatório apenas no update
 * serviço pertence à empresa autenticada em rotas privadas
 * serviço inativo não aparece em rotas públicas
 * serviço inativo não deve ser usado em novos agendamentos públicos
@@ -389,11 +432,13 @@ Regras de negócio:
 Regras frontend:
 
 * validar `name`
-* validar `price >= 0`
-* validar `durationMinutes > 0`
+* validar `description`
+* validar `price >= 0` quando informado
+* validar `durationMinutes > 0 && durationMinutes <= 720`
 * não enviar `businessId`
 * tratar `409` para duplicidade ou conflito quando aplicável
 * invalidar cache de serviços após criação/edição/remoção
+* não criar operação de delete
 
 ---
 
