@@ -33,6 +33,16 @@ type RequestOptions = Omit<RequestInit, 'body' | 'credentials'> & {
   body?: unknown
 }
 
+function buildApiUrl(path: string): URL {
+  const baseUrl = env.VITE_API_BASE_URL
+
+  if (baseUrl.startsWith('/')) {
+    return new URL(path, window.location.origin + baseUrl)
+  }
+
+  return new URL(path, baseUrl)
+}
+
 async function parseJson(response: Response): Promise<unknown> {
   const text = await response.text()
 
@@ -58,7 +68,7 @@ async function request<TSchema extends z.ZodType>(
     headers.set('Content-Type', 'application/json')
   }
 
-  const response = await fetch(new URL(path, env.VITE_API_BASE_URL), {
+  const response = await fetch(buildApiUrl(path), {
     ...options,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     credentials: 'include',
