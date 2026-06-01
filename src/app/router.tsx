@@ -8,6 +8,7 @@ import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { PublicBookingPage } from '../pages/PublicBookingPage'
 import { PublicLinkPage } from '../pages/PublicLinkPage'
+import { RegisterPage } from '../pages/RegisterPage'
 import { ServicesPage } from '../pages/ServicesPage'
 
 export function AppRouter() {
@@ -15,6 +16,7 @@ export function AppRouter() {
     <Routes>
       <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route
         path="/dashboard"
         element={

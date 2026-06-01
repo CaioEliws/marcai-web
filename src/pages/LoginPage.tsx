@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ApiError } from '@/shared/api/httpClient'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Button } from '@/shared/components/ui/button'
@@ -150,6 +150,16 @@ export function LoginPage() {
             </form>
           </CardContent>
         </Card>
+
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          Ainda não tem conta?{' '}
+          <Link
+            className="font-medium text-primary hover:underline"
+            to="/register"
+          >
+            Criar conta
+          </Link>
+        </p>
       </section>
     </main>
   )

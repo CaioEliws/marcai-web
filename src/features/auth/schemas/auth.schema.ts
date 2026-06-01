@@ -12,7 +12,7 @@ export const registerPayloadSchema = z.object({
   email: z.email().max(160),
   password: z.string().min(8).max(80),
   businessName: z.string().trim().min(2).max(120),
-  businessPhone: z.string().trim().max(30).optional(),
+  businessPhone: z.string().trim().regex(/^\d{10,30}$/),
 })
 
 export const loginResponseSchema = z.object({
