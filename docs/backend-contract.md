@@ -447,15 +447,49 @@ Regras frontend:
 
 Representa horário de funcionamento.
 
-Campos esperados:
+Endpoints privados:
 
 ```txt
-id
-business
-dayOfWeek
-openingTime
-closingTime
-active
+POST   /api/v1/dashboard/business-hours
+GET    /api/v1/dashboard/business-hours
+GET    /api/v1/dashboard/business-hours/active
+GET    /api/v1/dashboard/business-hours/{id}
+PUT    /api/v1/dashboard/business-hours/{id}
+DELETE /api/v1/dashboard/business-hours/{id}
+```
+
+Create payload:
+
+```json
+{
+  "dayOfWeek": 1,
+  "openingTime": "09:00:00",
+  "closingTime": "18:00:00"
+}
+```
+
+Update payload:
+
+```json
+{
+  "dayOfWeek": 1,
+  "openingTime": "09:00:00",
+  "closingTime": "18:00:00",
+  "active": true
+}
+```
+
+Response:
+
+```json
+{
+  "id": "uuid",
+  "dayOfWeek": 1,
+  "dayName": "Segunda-feira",
+  "openingTime": "09:00:00",
+  "closingTime": "18:00:00",
+  "active": true
+}
 ```
 
 Padrão de `dayOfWeek`:
@@ -472,15 +506,23 @@ Padrão de `dayOfWeek`:
 
 Regras de negócio:
 
+* `dayOfWeek` obrigatório, inteiro entre 0 e 6
+* `openingTime` obrigatório no formato `HH:mm:ss`
+* `closingTime` obrigatório no formato `HH:mm:ss`
 * abertura antes do fechamento
-* não pode existir duplicidade para o mesmo dia da semana dentro da mesma empresa
+* no máximo 1 BusinessHour por `dayOfWeek` por empresa, independentemente de `active`
+* `active` obrigatório apenas no update
+* `DELETE` existe e remove a configuração do dia
 * alterações privadas devem respeitar `business_id` do usuário autenticado
 
 Regras frontend:
 
+* validar `dayOfWeek`
+* validar formato de horário
 * validar `openingTime < closingTime`
 * não enviar `businessId`
 * bloquear duplicidade visualmente quando possível
+* invalidar cache de horários após criação/edição/remoção
 * backend continua sendo fonte de verdade
 
 ---
