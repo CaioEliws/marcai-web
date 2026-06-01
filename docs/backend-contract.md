@@ -68,6 +68,7 @@ Rotas privadas esperadas:
 ```txt
 /api/v1/dashboard/**
 /api/v1/auth/me
+POST /api/v1/auth/logout
 ```
 
 Rotas privadas exigem autenticação válida.
@@ -78,10 +79,10 @@ O frontend deve:
 * tratar `403` como sem permissão
 * não armazenar JWT em localStorage/sessionStorage
 * usar `credentials: 'include'` quando aplicável
-* preparar arquitetura para cookies HttpOnly/BFF
+* usar sessão baseada em cookie HttpOnly quando autenticado
 * não expor token em logs, console ou UI
 
-Se a API retornar token em login, não persistir de forma insegura sem decisão arquitetural explícita.
+O login envia cookie HttpOnly pelo header `Set-Cookie`. O frontend não deve ler, salvar ou reenviar token manualmente.
 
 ---
 
@@ -181,16 +182,29 @@ Rotas esperadas:
 POST /api/v1/auth/register
 POST /api/v1/auth/login
 GET  /api/v1/auth/me
+POST /api/v1/auth/logout
 ```
 
 ### Login
 
-Payload provável:
+Payload:
 
 ```json
 {
   "email": "usuario@email.com",
   "password": "senha"
+}
+```
+
+Resposta:
+
+```json
+{
+  "userId": "uuid",
+  "businessId": "uuid",
+  "name": "Caio Elias",
+  "email": "caio@email.com",
+  "role": "OWNER"
 }
 ```
 
@@ -200,13 +214,60 @@ Regras frontend:
 * não informar se e-mail existe ou não
 * tratar erro com mensagem genérica
 * não salvar token em localStorage/sessionStorage
-* após sucesso, buscar sessão atual via `/auth/me` se existir
+* não usar `Authorization: Bearer` manualmente
+* manter `credentials: 'include'`
+* após sucesso, invalidar/refazer `/auth/me`
 
 Mensagem segura para falha:
 
 ```txt
 Credenciais inválidas.
 ```
+
+### Me
+
+Rota:
+
+```txt
+GET /api/v1/auth/me
+```
+
+Autenticação:
+
+```txt
+Cookie HttpOnly enviado automaticamente pelo navegador
+```
+
+Resposta:
+
+```json
+{
+  "userId": "uuid",
+  "name": "Caio Elias",
+  "email": "caio@email.com",
+  "role": "OWNER"
+}
+```
+
+Regras frontend:
+
+* tratar `401` como sessão ausente ou expirada
+* tratar `403` como sem permissão
+* não persistir dados sensíveis fora do cache controlado da aplicação
+
+### Logout
+
+Rota:
+
+```txt
+POST /api/v1/auth/logout
+```
+
+Comportamento esperado:
+
+* backend limpa o cookie de autenticação
+* frontend limpa/invalida cache de autenticação
+* não há token para remover no frontend
 
 ### Register
 
@@ -225,7 +286,21 @@ Payload provável:
   "email": "caio@email.com",
   "password": "senha",
   "businessName": "Barbearia Exemplo",
-  "phone": "11999999999"
+  "businessPhone": "11999999999"
+}
+```
+
+Resposta:
+
+```json
+{
+  "userId": "uuid",
+  "businessId": "uuid",
+  "name": "Caio",
+  "email": "caio@email.com",
+  "businessName": "Barbearia Exemplo",
+  "slug": "barbearia-exemplo",
+  "message": "Conta criada com sucesso."
 }
 ```
 

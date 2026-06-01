@@ -1,26 +1,30 @@
 import { httpClient } from '@/shared/api/httpClient'
 import {
-  authMutationResponseSchema,
+  loginResponseSchema,
   loginPayloadSchema,
+  logoutResponseSchema,
+  meResponseSchema,
   registerPayloadSchema,
-  sessionSchema,
+  registerResponseSchema,
 } from '../schemas/auth.schema'
 import type { LoginPayload, RegisterPayload } from '../types/auth.type'
 
 export const authApi = {
-  getSession: () => httpClient.get('/api/v1/auth/me', sessionSchema),
+  getSession: () => httpClient.get('/api/v1/auth/me', meResponseSchema),
 
   login: (payload: LoginPayload) =>
     httpClient.post(
       '/api/v1/auth/login',
-      authMutationResponseSchema,
+      loginResponseSchema,
       loginPayloadSchema.parse(payload),
     ),
+
+  logout: () => httpClient.post('/api/v1/auth/logout', logoutResponseSchema),
 
   register: (payload: RegisterPayload) =>
     httpClient.post(
       '/api/v1/auth/register',
-      authMutationResponseSchema,
+      registerResponseSchema,
       registerPayloadSchema.parse(payload),
     ),
 }

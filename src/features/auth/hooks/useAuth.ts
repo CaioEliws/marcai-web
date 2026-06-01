@@ -33,6 +33,17 @@ export function useLoginMutation() {
   })
 }
 
+export function useLogoutMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: authApi.logout,
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: authQueryKeys.all })
+    },
+  })
+}
+
 export function useRegisterMutation() {
   const queryClient = useQueryClient()
 

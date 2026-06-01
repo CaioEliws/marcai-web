@@ -8,36 +8,36 @@ export const loginPayloadSchema = z.object({
 })
 
 export const registerPayloadSchema = z.object({
-  name: z.string().trim().min(1),
-  email: z.email(),
-  password: z.string().min(8),
-  businessName: z.string().trim().min(1),
-  phone: z.string().trim().min(8),
+  name: z.string().trim().min(2).max(120),
+  email: z.email().max(160),
+  password: z.string().min(8).max(80),
+  businessName: z.string().trim().min(2).max(120),
+  businessPhone: z.string().trim().max(30).optional(),
 })
 
-export const authBusinessSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  slug: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  active: z.boolean().optional(),
-})
-
-export const authUserSchema = z.object({
-  id: z.number(),
+export const loginResponseSchema = z.object({
+  userId: z.uuid(),
+  businessId: z.uuid(),
   name: z.string(),
   email: z.email(),
+  role: authRoleSchema,
 })
 
-export const sessionSchema = z.object({
-  user: authUserSchema,
-  business: authBusinessSchema.nullable().optional(),
-  role: authRoleSchema.optional(),
+export const registerResponseSchema = z.object({
+  userId: z.uuid(),
+  businessId: z.uuid(),
+  name: z.string(),
+  email: z.email(),
+  businessName: z.string(),
+  slug: z.string(),
+  message: z.string(),
 })
 
-export const authMutationResponseSchema = z.union([
-  sessionSchema,
-  z.object({}).passthrough(),
-  z.null(),
-])
+export const meResponseSchema = z.object({
+  userId: z.uuid(),
+  name: z.string(),
+  email: z.email(),
+  role: authRoleSchema,
+})
+
+export const logoutResponseSchema = z.null()
