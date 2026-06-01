@@ -35,7 +35,7 @@ export const availableTimesSchema = z.object({
 export const createPublicAppointmentSchema = z.object({
   appointmentDate: dateSchema,
   clientName: z.string().trim().min(2).max(120),
-  clientPhone: z.string().trim().min(8).max(20),
+  clientPhone: z.string().trim().min(10).max(30),
   serviceId: z.uuid(),
   startTime: timeSchema,
 })
