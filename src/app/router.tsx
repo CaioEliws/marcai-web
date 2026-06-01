@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { PrivateLayout } from './PrivateLayout'
 import { ProtectedRoute } from './ProtectedRoute'
 import { RootRedirect } from './RootRedirect'
+import { AvailabilityPage } from '../pages/AvailabilityPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { PrivatePlaceholderPage } from '../pages/PrivatePlaceholderPage'
@@ -32,15 +33,7 @@ export function AppRouter() {
             />
           }
         />
-        <Route
-          path="availability"
-          element={
-            <PrivatePlaceholderPage
-              title="Horários"
-              description="Configuração de disponibilidade e horários de funcionamento ficará aqui."
-            />
-          }
-        />
+        <Route path="availability" element={<AvailabilityPage />} />
         <Route
           path="public-link"
           element={
