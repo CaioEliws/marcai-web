@@ -1,0 +1,645 @@
+# Backend Contract — Marcaí API
+
+## Base
+
+Backend: Java/Spring Boot
+API prefix provável:
+
+```txt
+/api/v1
+```
+
+No frontend, preferir chamadas relativas:
+
+```txt
+/api/v1/...
+```
+
+Quando necessário em desenvolvimento, configurar proxy no Vite para encaminhar `/api` ao backend local.
+
+---
+
+## Stack e arquitetura do backend
+
+O backend Marcaí API usa:
+
+* Java 17+
+* Spring Boot
+* Spring Security
+* JWT
+* BCrypt
+* JPA/Hibernate
+* PostgreSQL
+* Flyway Migrations
+* Bean Validation
+* Controllers
+* Services
+* Repositories
+* DTOs
+* Mappers
+* Exceptions
+
+Arquitetura esperada:
+
+```txt
+Controller -> Service -> Repository -> Database
+```
+
+O frontend não deve depender de detalhes internos de entity, repository ou tabela. Consumir apenas DTOs expostos pela API.
+
+---
+
+## Segurança e autenticação
+
+O backend atual trabalha com rotas públicas e privadas.
+
+Rotas públicas esperadas:
+
+```txt
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+GET  /api/v1/public/**
+POST /api/v1/public/**
+GET  /actuator/health
+```
+
+Rotas privadas esperadas:
+
+```txt
+/api/v1/dashboard/**
+/api/v1/auth/me
+```
+
+Rotas privadas exigem autenticação válida.
+
+O frontend deve:
+
+* tratar `401` como não autenticado
+* tratar `403` como sem permissão
+* não armazenar JWT em localStorage/sessionStorage
+* usar `credentials: 'include'` quando aplicável
+* preparar arquitetura para cookies HttpOnly/BFF
+* não expor token em logs, console ou UI
+
+Se a API retornar token em login, não persistir de forma insegura sem decisão arquitetural explícita.
+
+---
+
+## Regra crítica: multi-tenancy
+
+O backend é multi-tenant.
+
+Toda entidade privada vinculada a uma empresa deve ser acessada pelo `business_id` do usuário autenticado.
+
+Regra para o frontend:
+
+```txt
+Nunca enviar businessId como fonte de autorização em endpoints privados.
+```
+
+O frontend pode receber dados da empresa para exibição, mas não deve construir fluxos que dependam do usuário escolher ou alterar `businessId` para acessar dados privados.
+
+Entidades sensíveis ao isolamento:
+
+* Business
+* BusinessMember
+* ServiceItem
+* BusinessHour
+* Client
+* Appointment
+* BusinessBookingSettings
+* PublicBookingAttempt em contexto privado
+
+---
+
+## Roles
+
+Roles principais:
+
+```txt
+ADMIN
+OWNER
+PROFESSIONAL
+```
+
+Authorities no backend:
+
+```txt
+ROLE_ADMIN
+ROLE_OWNER
+ROLE_PROFESSIONAL
+```
+
+No frontend:
+
+* role pode ser usada para UX condicional
+* role não substitui autorização do backend
+* não criar novas roles sem confirmação
+* não assumir acesso apenas porque o botão está visível ou oculto
+
+---
+
+## Formato esperado de erro
+
+Formato provável de erro da API:
+
+```json
+{
+  "timestamp": "2026-01-01T10:00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Mensagem do erro",
+  "path": "/api/v1/...",
+  "fieldErrors": [
+    {
+      "field": "email",
+      "message": "E-mail inválido"
+    }
+  ]
+}
+```
+
+O frontend deve estar preparado para:
+
+* `400` erro de validação
+* `401` não autenticado
+* `403` sem permissão
+* `404` recurso inexistente ou inacessível
+* `409` conflito de regra de negócio
+* `429` rate limit, se implementado
+* `500` erro interno genérico
+
+Nunca exibir stack trace, SQL, token, segredo ou detalhe interno para o usuário.
+
+---
+
+## Auth
+
+Rotas esperadas:
+
+```txt
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+GET  /api/v1/auth/me
+```
+
+### Login
+
+Payload provável:
+
+```json
+{
+  "email": "usuario@email.com",
+  "password": "senha"
+}
+```
+
+Regras frontend:
+
+* validar e-mail e senha com Zod antes de enviar
+* não informar se e-mail existe ou não
+* tratar erro com mensagem genérica
+* não salvar token em localStorage/sessionStorage
+* após sucesso, buscar sessão atual via `/auth/me` se existir
+
+Mensagem segura para falha:
+
+```txt
+Credenciais inválidas.
+```
+
+### Register
+
+O cadastro deve criar no backend, em uma única transação:
+
+* User
+* Business
+* BusinessMember
+* BusinessBookingSettings
+
+Payload provável:
+
+```json
+{
+  "name": "Caio",
+  "email": "caio@email.com",
+  "password": "senha",
+  "businessName": "Barbearia Exemplo",
+  "phone": "11999999999"
+}
+```
+
+Regras frontend:
+
+* validar campos obrigatórios
+* validar e-mail
+* validar tamanho mínimo de senha
+* normalizar telefone quando aplicável
+* não enviar role manualmente
+* não enviar businessId
+* tratar conflito de e-mail/slug com `409` quando aplicável
+
+---
+
+## Business
+
+Representa a empresa do usuário autenticado.
+
+Campos esperados:
+
+```txt
+id
+name
+slug
+phone
+address
+active
+```
+
+Regras frontend:
+
+* não permitir alteração de `id` pela UI
+* não usar `businessId` como parâmetro de autorização privada
+* exibir `slug` como link público quando disponível
+* não expor dados internos desnecessários
+
+---
+
+## BusinessMember
+
+Relaciona usuário e empresa.
+
+Campos esperados:
+
+```txt
+id
+user
+business
+role
+active
+```
+
+Regras frontend:
+
+* não exibir dados sensíveis do usuário
+* role pode controlar UX, mas não autorização real
+* alterações de membros devem ser tratadas como operação sensível
+
+---
+
+## ServiceItem
+
+Representa serviço oferecido pela empresa.
+
+Campos esperados:
+
+```txt
+id
+business
+name
+price
+durationMinutes
+active
+```
+
+Regras de negócio:
+
+* duração maior que zero
+* duração menor ou igual a 12 horas
+* preço não pode ser negativo
+* serviço pertence à empresa autenticada em rotas privadas
+* serviço inativo não aparece em rotas públicas
+* serviço inativo não deve ser usado em novos agendamentos públicos
+
+Regras frontend:
+
+* validar `name`
+* validar `price >= 0`
+* validar `durationMinutes > 0`
+* não enviar `businessId`
+* tratar `409` para duplicidade ou conflito quando aplicável
+* invalidar cache de serviços após criação/edição/remoção
+
+---
+
+## BusinessHour
+
+Representa horário de funcionamento.
+
+Campos esperados:
+
+```txt
+id
+business
+dayOfWeek
+openingTime
+closingTime
+active
+```
+
+Padrão de `dayOfWeek`:
+
+```txt
+0 = Domingo
+1 = Segunda-feira
+2 = Terça-feira
+3 = Quarta-feira
+4 = Quinta-feira
+5 = Sexta-feira
+6 = Sábado
+```
+
+Regras de negócio:
+
+* abertura antes do fechamento
+* não pode existir duplicidade para o mesmo dia da semana dentro da mesma empresa
+* alterações privadas devem respeitar `business_id` do usuário autenticado
+
+Regras frontend:
+
+* validar `openingTime < closingTime`
+* não enviar `businessId`
+* bloquear duplicidade visualmente quando possível
+* backend continua sendo fonte de verdade
+
+---
+
+## Client
+
+Representa cliente final que agenda pelo link público.
+
+Campos esperados:
+
+```txt
+id
+business
+name
+phone
+active
+```
+
+Regras:
+
+* telefone deve ser normalizado para evitar duplicidade por empresa
+* dados de cliente são sensíveis
+* não exibir mais informações do que o necessário
+* não vazar clientes entre empresas
+
+---
+
+## Appointment
+
+Representa agendamento.
+
+Campos esperados:
+
+```txt
+id
+business
+client
+serviceItem
+date
+startTime
+endTime
+status
+```
+
+Status esperados:
+
+```txt
+SCHEDULED
+COMPLETED
+CANCELED
+NO_SHOW
+```
+
+Status que bloqueia conflito:
+
+```txt
+SCHEDULED
+```
+
+Status que não bloqueiam novo agendamento:
+
+```txt
+CANCELED
+NO_SHOW
+COMPLETED
+```
+
+Regras frontend:
+
+* exibir status de forma clara
+* permitir ações conforme role e estado
+* evitar múltiplos submits
+* invalidar cache após alteração
+* tratar conflito de horário com `409`
+* não enviar `businessId`
+
+---
+
+## BusinessBookingSettings
+
+Representa regras de agendamento da empresa.
+
+Campos esperados:
+
+```txt
+id
+business
+slotIntervalMinutes
+minAdvanceMinutes
+maxDaysInAdvance
+maxActiveAppointmentsPerPhone
+allowedOverlapMinutes
+```
+
+Regras frontend:
+
+* validar números positivos ou zero conforme contrato
+* explicar efeitos das configurações na UI
+* não permitir valores absurdos sem validação
+* backend continua sendo fonte de verdade
+
+---
+
+## PublicBookingAttempt
+
+Representa tentativa de agendamento público.
+
+Campos esperados:
+
+```txt
+id
+business
+phone
+ip
+success
+reason
+createdAt
+```
+
+Uso esperado:
+
+* auditoria
+* futura proteção contra abuso
+* base para rate limit
+
+Frontend não deve depender diretamente dessa entidade em fluxo público comum.
+
+---
+
+## Public Booking
+
+Fluxo público por slug.
+
+Rota provável:
+
+```txt
+POST /api/v1/public/{slug}/appointments
+```
+
+Possíveis rotas auxiliares:
+
+```txt
+GET /api/v1/public/{slug}
+GET /api/v1/public/{slug}/services
+GET /api/v1/public/{slug}/availability
+```
+
+Pipeline de validação do backend:
+
+* empresa existe
+* empresa está ativa
+* serviço existe
+* serviço está ativo
+* serviço pertence à empresa do slug informado
+* data não está no passado
+* horário respeita `minAdvanceMinutes`
+* data respeita `maxDaysInAdvance`
+* horário está dentro do BusinessHour do dia
+* horário final é calculado pela duração do serviço
+* não existe conflito com agendamentos ativos
+* agendamentos cancelados não bloqueiam novo horário
+* telefone é normalizado
+* respeita `maxActiveAppointmentsPerPhone`
+* considera `allowedOverlapMinutes`, quando existir
+
+Regras frontend:
+
+* validar nome
+* validar telefone
+* validar serviço selecionado
+* validar data e horário
+* evitar duplo clique/múltiplos submits
+* tratar `409` como conflito de horário/regra
+* tratar `429` como excesso de tentativas quando existir
+* nunca expor dados internos da empresa
+
+---
+
+## Dashboard
+
+Rotas privadas prováveis:
+
+```txt
+GET /api/v1/dashboard/**
+```
+
+Dados possíveis:
+
+* métricas do negócio
+* próximos agendamentos
+* serviços ativos
+* horários configurados
+* clientes recentes
+* indicadores financeiros, se existirem
+
+Regras frontend:
+
+* tratar dados como sensíveis
+* não manter dados de outra sessão após logout
+* limpar/invalidate cache ao sair da conta
+* evitar logs com payload completo
+* usar React Query para cache e invalidação
+
+---
+
+## Padrão de contratos no frontend
+
+Para cada endpoint:
+
+```txt
+features/<feature>/
+  schemas/
+    <feature>.schema.ts
+  api/
+    <feature>Api.ts
+  hooks/
+    use<Feature>.ts
+```
+
+Exemplo:
+
+```ts
+import { z } from 'zod'
+
+export const serviceItemSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  price: z.number(),
+  durationMinutes: z.number(),
+  active: z.boolean(),
+})
+
+export type ServiceItem = z.infer<typeof serviceItemSchema>
+```
+
+Respostas da API devem ser validadas antes de entrar na UI.
+
+Payloads críticos devem ser validados antes de envio.
+
+---
+
+## Cache e invalidação
+
+Regras recomendadas:
+
+* `auth/me`: invalidar após login/logout
+* `services`: invalidar após criar/editar/remover serviço
+* `appointments`: invalidar após criar/cancelar/concluir/no-show
+* `availability`: invalidar após editar horários
+* `dashboard`: invalidar após mudanças que afetem métricas
+
+Query keys devem ser estáveis e previsíveis.
+
+Exemplo:
+
+```ts
+export const serviceQueryKeys = {
+  all: ['services'] as const,
+  detail: (id: number) => ['services', id] as const,
+}
+```
+
+---
+
+## Observações importantes
+
+O backend é a fonte de verdade para regras críticas.
+
+O frontend deve:
+
+* melhorar UX
+* reduzir erros óbvios
+* validar contratos
+* proteger contra exposição acidental
+* não criar atalhos inseguros
+
+O frontend não deve:
+
+* decidir autorização final
+* confiar em role como segurança real
+* confiar em businessId enviado pelo usuário
+* armazenar token de forma insegura
+* renderizar dados sensíveis sem necessidade
