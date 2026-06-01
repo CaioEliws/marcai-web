@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import {
   Card,
@@ -63,8 +64,16 @@ function getConfirmationMessage(
   return messages[action]
 }
 
+function isValidDateParam(date: string | null) {
+  return Boolean(date && /^\d{4}-\d{2}-\d{2}$/.test(date))
+}
+
 export function AppointmentsPage() {
-  const [selectedDate, setSelectedDate] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialDate = searchParams.get('date')
+  const [selectedDate, setSelectedDate] = useState(
+    isValidDateParam(initialDate) ? initialDate ?? '' : '',
+  )
   const [actionError, setActionError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [pendingActionId, setPendingActionId] = useState<string | null>(null)
@@ -76,6 +85,22 @@ export function AppointmentsPage() {
   const cancelMutation = useCancelAppointmentMutation()
   const completeMutation = useCompleteAppointmentMutation()
   const noShowMutation = useNoShowAppointmentMutation()
+
+  function handleDateChange(date: string) {
+    setSelectedDate(date)
+
+    if (date) {
+      setSearchParams({ date })
+      return
+    }
+
+    setSearchParams({})
+  }
+
+  function handleDateClear() {
+    setSelectedDate('')
+    setSearchParams({})
+  }
 
   async function handleAction(
     appointment: Appointment,
@@ -136,8 +161,8 @@ export function AppointmentsPage() {
         <CardContent>
           <AppointmentDateFilter
             date={selectedDate}
-            onChange={setSelectedDate}
-            onClear={() => setSelectedDate('')}
+            onChange={handleDateChange}
+            onClear={handleDateClear}
           />
         </CardContent>
       </Card>
