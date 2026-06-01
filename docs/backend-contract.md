@@ -656,18 +656,79 @@ Frontend não deve depender diretamente dessa entidade em fluxo público comum.
 
 Fluxo público por slug.
 
-Rota provável:
+Endpoints públicos:
 
 ```txt
-POST /api/v1/public/{slug}/appointments
+GET  /api/v1/public/businesses/{slug}
+GET  /api/v1/public/businesses/{slug}/services
+GET  /api/v1/public/businesses/{slug}/available-times?serviceId={uuid}&date=YYYY-MM-DD
+POST /api/v1/public/businesses/{slug}/appointments
 ```
 
-Possíveis rotas auxiliares:
+Business response:
 
-```txt
-GET /api/v1/public/{slug}
-GET /api/v1/public/{slug}/services
-GET /api/v1/public/{slug}/availability
+```json
+{
+  "id": "uuid",
+  "name": "Barbearia do Caio",
+  "slug": "barbearia-do-caio",
+  "description": "...",
+  "phone": "11999999999",
+  "address": "...",
+  "city": "Indaiatuba",
+  "state": "SP"
+}
+```
+
+Services response:
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Corte masculino",
+    "description": "Corte tradicional",
+    "price": 50.00,
+    "durationMinutes": 30
+  }
+]
+```
+
+Available times response:
+
+```json
+{
+  "serviceId": "uuid",
+  "date": "2026-06-10",
+  "availableTimes": ["09:00:00", "09:30:00"]
+}
+```
+
+Create appointment payload:
+
+```json
+{
+  "clientName": "João Silva",
+  "clientPhone": "11999999999",
+  "serviceId": "uuid",
+  "appointmentDate": "2026-06-10",
+  "startTime": "09:00:00"
+}
+```
+
+Create appointment response:
+
+```json
+{
+  "appointmentId": "uuid",
+  "message": "Agendamento realizado com sucesso.",
+  "businessName": "Barbearia do Caio",
+  "serviceName": "Corte masculino",
+  "clientName": "João Silva",
+  "appointmentDate": "2026-06-10",
+  "startTime": "09:00:00",
+  "endTime": "09:30:00"
+}
 ```
 
 Pipeline de validação do backend:
