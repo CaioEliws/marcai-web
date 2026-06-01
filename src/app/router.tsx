@@ -6,6 +6,7 @@ import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { PrivatePlaceholderPage } from '../pages/PrivatePlaceholderPage'
 import { PublicBookingPage } from '../pages/PublicBookingPage'
+import { ServicesPage } from '../pages/ServicesPage'
 
 export function AppRouter() {
   return (
@@ -21,15 +22,7 @@ export function AppRouter() {
         }
       >
         <Route index element={<DashboardPage />} />
-        <Route
-          path="services"
-          element={
-            <PrivatePlaceholderPage
-              title="Serviços"
-              description="Cadastro e gestão de serviços serão implementados nas próximas etapas."
-            />
-          }
-        />
+        <Route path="services" element={<ServicesPage />} />
         <Route
           path="appointments"
           element={

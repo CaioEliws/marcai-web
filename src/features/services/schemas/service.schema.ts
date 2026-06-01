@@ -7,8 +7,8 @@ export const serviceSchema = z.object({
   price: z.number().nullable(),
   durationMinutes: z.number().int(),
   active: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
 })
 
 export const serviceListSchema = z.array(serviceSchema)

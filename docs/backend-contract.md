@@ -414,7 +414,7 @@ Response:
   "durationMinutes": 30,
   "active": true,
   "createdAt": "2026-01-01T10:00:00",
-  "updatedAt": "2026-01-01T10:00:00"
+  "updatedAt": null
 }
 ```
 
@@ -425,6 +425,7 @@ Regras de negócio:
 * `price` pode ser `null`, mas não pode ser negativo quando enviado
 * `durationMinutes` obrigatório, maior que zero e menor ou igual a 720
 * `active` obrigatório apenas no update
+* `updatedAt` pode ser `null` em serviços recém-criados
 * serviço pertence à empresa autenticada em rotas privadas
 * serviço inativo não aparece em rotas públicas
 * serviço inativo não deve ser usado em novos agendamentos públicos
