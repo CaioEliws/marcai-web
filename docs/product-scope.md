@@ -189,7 +189,7 @@ O cliente final acessa um link público da empresa.
 Rota esperada:
 
 ```txt
-/book/:slug
+/:slug
 ```
 
 Fluxo esperado:

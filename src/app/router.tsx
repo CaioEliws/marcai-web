@@ -5,6 +5,7 @@ import { RootRedirect } from './RootRedirect'
 import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { PrivatePlaceholderPage } from '../pages/PrivatePlaceholderPage'
+import { PublicBookingPage } from '../pages/PublicBookingPage'
 
 export function AppRouter() {
   return (
@@ -57,6 +58,7 @@ export function AppRouter() {
           }
         />
       </Route>
+      <Route path="/:slug" element={<PublicBookingPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
