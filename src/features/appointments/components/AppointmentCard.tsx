@@ -1,6 +1,18 @@
 import { AlertCircle, CheckCircle2, UserX, XCircle } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/shared/components/ui/alert-dialog'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
+import { buttonVariants } from '@/shared/components/ui/button.variants'
 import {
   Card,
   CardContent,
@@ -22,6 +34,90 @@ type AppointmentCardProps = {
   appointment: Appointment
   onAction: (appointment: Appointment, action: AppointmentAction) => void
   pendingActionId: string | null
+}
+
+const actionContent: Record<
+  AppointmentAction,
+  {
+    buttonLabel: string
+    confirmLabel: string
+    description: (appointment: Appointment) => string
+    icon: typeof CheckCircle2
+    title: string
+    variant: 'destructive' | 'outline'
+  }
+> = {
+  cancel: {
+    buttonLabel: 'Cancelar',
+    confirmLabel: 'Cancelar agendamento',
+    description: (appointment) =>
+      `O agendamento de ${appointment.clientName} será cancelado.`,
+    icon: XCircle,
+    title: 'Cancelar agendamento?',
+    variant: 'destructive',
+  },
+  complete: {
+    buttonLabel: 'Concluir',
+    confirmLabel: 'Concluir agendamento',
+    description: (appointment) =>
+      `O agendamento de ${appointment.clientName} será marcado como concluído.`,
+    icon: CheckCircle2,
+    title: 'Concluir agendamento?',
+    variant: 'outline',
+  },
+  'no-show': {
+    buttonLabel: 'Marcar falta',
+    confirmLabel: 'Marcar falta',
+    description: (appointment) =>
+      `O agendamento de ${appointment.clientName} será marcado como falta.`,
+    icon: UserX,
+    title: 'Marcar falta?',
+    variant: 'outline',
+  },
+}
+
+function AppointmentActionButton({
+  action,
+  appointment,
+  disabled,
+  onAction,
+}: {
+  action: AppointmentAction
+  appointment: Appointment
+  disabled: boolean
+  onAction: (appointment: Appointment, action: AppointmentAction) => void
+}) {
+  const content = actionContent[action]
+  const Icon = content.icon
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button type="button" variant={content.variant} disabled={disabled}>
+          <Icon className="h-4 w-4" aria-hidden="true" />
+          {content.buttonLabel}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{content.title}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {content.description(appointment)}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={disabled}>Voltar</AlertDialogCancel>
+          <AlertDialogAction
+            className={buttonVariants({ variant: content.variant })}
+            disabled={disabled}
+            onClick={() => onAction(appointment, action)}
+          >
+            {content.confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
 }
 
 export function AppointmentCard({
@@ -90,33 +186,24 @@ export function AppointmentCard({
 
         {canManage ? (
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onAction(appointment, 'complete')}
+            <AppointmentActionButton
+              action="complete"
+              appointment={appointment}
               disabled={isPending}
-            >
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-              Concluir
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onAction(appointment, 'no-show')}
+              onAction={onAction}
+            />
+            <AppointmentActionButton
+              action="no-show"
+              appointment={appointment}
               disabled={isPending}
-            >
-              <UserX className="h-4 w-4" aria-hidden="true" />
-              Marcar falta
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => onAction(appointment, 'cancel')}
+              onAction={onAction}
+            />
+            <AppointmentActionButton
+              action="cancel"
+              appointment={appointment}
               disabled={isPending}
-            >
-              <XCircle className="h-4 w-4" aria-hidden="true" />
-              Cancelar
-            </Button>
+              onAction={onAction}
+            />
           </div>
         ) : (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -142,14 +142,6 @@ export function AvailabilityPage() {
   }
 
   async function handleDeleteBusinessHour(businessHour: BusinessHour) {
-    const confirmed = window.confirm(
-      `Remover a configuracao de ${businessHour.dayName}?`,
-    )
-
-    if (!confirmed) {
-      return
-    }
-
     setActionError(null)
     setSuccessMessage(null)
     setPendingBusinessHourId(businessHour.id)

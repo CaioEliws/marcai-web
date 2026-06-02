@@ -1,6 +1,18 @@
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/shared/components/ui/alert-dialog'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
+import { buttonVariants } from '@/shared/components/ui/button.variants'
 import {
   Card,
   CardContent,
@@ -128,14 +140,43 @@ export function BusinessHoursList({
                           ? 'Desativar'
                           : 'Ativar'}
                     </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => onDelete(businessHour)}
-                      disabled={isPending}
-                    >
-                      {isPending ? 'Removendo...' : 'Remover'}
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          disabled={isPending}
+                        >
+                          {isPending ? 'Removendo...' : 'Remover'}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Remover horário de funcionamento?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            A configuração de {businessHour.dayName} será
+                            removida e deixará de controlar a disponibilidade
+                            pública deste dia.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={isPending}>
+                            Voltar
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            className={buttonVariants({
+                              variant: 'destructive',
+                            })}
+                            disabled={isPending}
+                            onClick={() => onDelete(businessHour)}
+                          >
+                            Remover horário
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </article>
               )

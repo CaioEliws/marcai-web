@@ -303,6 +303,10 @@ test('remover avatar chama DELETE /dashboard/profile/avatar', async ({
 
   await gotoProfile(page)
   await page.getByRole('button', { name: 'Remover imagem' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Remover imagem de perfil?' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Remover imagem' }).last().click()
 
   await expect(page.getByText('Imagem removida com sucesso.')).toBeVisible()
   expect(deleteCalled).toBe(true)

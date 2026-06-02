@@ -1,6 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/shared/components/ui/alert-dialog'
 import { Button } from '@/shared/components/ui/button'
+import { buttonVariants } from '@/shared/components/ui/button.variants'
 import {
   Card,
   CardContent,
@@ -130,14 +142,38 @@ export function AvatarUploader({
               >
                 {isUploading ? 'Enviando...' : 'Enviar imagem'}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void onDelete()}
-                disabled={isBusy || !profile.avatarUrl}
-              >
-                {isDeleting ? 'Removendo...' : 'Remover imagem'}
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isBusy || !profile.avatarUrl}
+                  >
+                    {isDeleting ? 'Removendo...' : 'Remover imagem'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remover imagem de perfil?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Sua imagem atual será removida e o painel voltará a exibir
+                      suas iniciais.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isDeleting}>
+                      Voltar
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      className={buttonVariants({ variant: 'destructive' })}
+                      disabled={isDeleting}
+                      onClick={() => void onDelete()}
+                    >
+                      Remover imagem
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>

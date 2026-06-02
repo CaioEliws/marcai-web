@@ -697,8 +697,10 @@ Representa agendamento.
 Endpoints privados:
 
 ```txt
+POST  /api/v1/dashboard/appointments
 GET   /api/v1/dashboard/appointments
 GET   /api/v1/dashboard/appointments/by-date?date=YYYY-MM-DD
+GET   /api/v1/dashboard/appointments/available-times?serviceId={uuid}&date=YYYY-MM-DD
 GET   /api/v1/dashboard/appointments/{id}
 PATCH /api/v1/dashboard/appointments/{id}/cancel
 PATCH /api/v1/dashboard/appointments/{id}/complete
@@ -706,6 +708,31 @@ PATCH /api/v1/dashboard/appointments/{id}/no-show
 ```
 
 PATCH actions não recebem body.
+
+Create payload:
+
+```json
+{
+  "clientName": "João Silva",
+  "clientPhone": "11999999999",
+  "serviceId": "uuid",
+  "appointmentDate": "2026-06-10",
+  "startTime": "09:00:00",
+  "notes": "Cliente pediu corte degradê"
+}
+```
+
+`notes` é opcional e deve ter no máximo 500 caracteres.
+
+Available times response:
+
+```json
+{
+  "serviceId": "uuid",
+  "date": "2026-06-10",
+  "availableTimes": ["09:00:00", "09:30:00"]
+}
+```
 
 Response:
 

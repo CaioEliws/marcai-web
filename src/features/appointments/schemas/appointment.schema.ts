@@ -32,3 +32,18 @@ export const appointmentSchema = z.object({
 })
 
 export const appointmentListSchema = z.array(appointmentSchema)
+
+export const dashboardAvailableTimesSchema = z.object({
+  availableTimes: z.array(timeSchema),
+  date: dateSchema,
+  serviceId: z.uuid(),
+})
+
+export const manualAppointmentPayloadSchema = z.object({
+  appointmentDate: dateSchema,
+  clientName: z.string().trim().min(2).max(120),
+  clientPhone: z.string().trim().min(10).max(30),
+  notes: z.string().trim().max(500).optional(),
+  serviceId: z.uuid(),
+  startTime: timeSchema,
+})

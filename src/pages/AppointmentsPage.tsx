@@ -8,16 +8,28 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/components/ui/card'
-import { ApiContractError, ApiError } from '@/shared/api/httpClient'
+import {
+  ApiContractError,
+  ApiError,
+  getApiFieldErrors,
+} from '@/shared/api/httpClient'
 import { AppointmentDateFilter } from '@/features/appointments/components/AppointmentDateFilter'
 import { AppointmentsList } from '@/features/appointments/components/AppointmentsList'
-import type { Appointment } from '@/features/appointments/types/appointment.type'
+import {
+  CreateAppointmentDialog,
+  type AppointmentFieldErrors,
+} from '@/features/appointments/components/CreateAppointmentDialog'
+import type {
+  Appointment,
+  ManualAppointmentPayload,
+} from '@/features/appointments/types/appointment.type'
 import type { AppointmentAction } from '@/features/appointments/components/appointmentUtils'
 import {
   useAppointmentsByDateQuery,
   useAppointmentsQuery,
   useCancelAppointmentMutation,
   useCompleteAppointmentMutation,
+  useCreateAppointmentMutation,
   useNoShowAppointmentMutation,
 } from '@/features/appointments/hooks/useAppointments'
 
@@ -51,19 +63,6 @@ function getSafeErrorMessage(error: unknown) {
   return 'Não foi possível concluir a operação. Tente novamente.'
 }
 
-function getConfirmationMessage(
-  appointment: Appointment,
-  action: AppointmentAction,
-) {
-  const messages: Record<AppointmentAction, string> = {
-    cancel: `Cancelar o agendamento de ${appointment.clientName}?`,
-    complete: `Concluir o agendamento de ${appointment.clientName}?`,
-    'no-show': `Marcar falta para o agendamento de ${appointment.clientName}?`,
-  }
-
-  return messages[action]
-}
-
 function isValidDateParam(date: string | null) {
   return Boolean(date && /^\d{4}-\d{2}-\d{2}$/.test(date))
 }
@@ -75,6 +74,9 @@ export function AppointmentsPage() {
     isValidDateParam(initialDate) ? initialDate ?? '' : '',
   )
   const [actionError, setActionError] = useState<string | null>(null)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [createFieldErrors, setCreateFieldErrors] =
+    useState<AppointmentFieldErrors>({})
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [pendingActionId, setPendingActionId] = useState<string | null>(null)
 
@@ -84,6 +86,7 @@ export function AppointmentsPage() {
 
   const cancelMutation = useCancelAppointmentMutation()
   const completeMutation = useCompleteAppointmentMutation()
+  const createMutation = useCreateAppointmentMutation()
   const noShowMutation = useNoShowAppointmentMutation()
 
   function handleDateChange(date: string) {
@@ -106,12 +109,6 @@ export function AppointmentsPage() {
     appointment: Appointment,
     action: AppointmentAction,
   ) {
-    const confirmed = window.confirm(getConfirmationMessage(appointment, action))
-
-    if (!confirmed) {
-      return
-    }
-
     setActionError(null)
     setSuccessMessage(null)
     setPendingActionId(appointment.id)
@@ -138,17 +135,57 @@ export function AppointmentsPage() {
     }
   }
 
+  async function handleCreateAppointment(payload: ManualAppointmentPayload) {
+    setCreateError(null)
+    setCreateFieldErrors({})
+    setSuccessMessage(null)
+
+    try {
+      await createMutation.mutateAsync(payload)
+      setSuccessMessage('Agendamento criado com sucesso.')
+    } catch (error) {
+      setCreateFieldErrors(
+        getApiFieldErrors(error, [
+          'appointmentDate',
+          'clientName',
+          'clientPhone',
+          'notes',
+          'serviceId',
+          'startTime',
+        ] as const),
+      )
+      setCreateError(getSafeErrorMessage(error))
+      throw error
+    }
+  }
+
+  function resetCreateMessages() {
+    setCreateError(null)
+    setCreateFieldErrors({})
+  }
+
   const emptyMessage = selectedDate
     ? 'Nenhum agendamento encontrado para a data selecionada.'
     : 'Nenhum agendamento encontrado.'
 
   return (
     <section className="mx-auto grid w-full max-w-6xl gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Agendamentos</h1>
-        <p className="mt-2 max-w-2xl text-muted-foreground">
-          Acompanhe e gerencie os horários agendados pelos clientes.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Agendamentos</h1>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Acompanhe e gerencie os horários agendados pelos clientes.
+          </p>
+        </div>
+
+        <CreateAppointmentDialog
+          error={createError}
+          fieldErrors={createFieldErrors}
+          isSubmitting={createMutation.isPending}
+          onCreate={handleCreateAppointment}
+          onFieldErrors={setCreateFieldErrors}
+          onResetMessages={resetCreateMessages}
+        />
       </div>
 
       <Card>
