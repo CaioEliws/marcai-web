@@ -6,6 +6,7 @@ import { AppointmentsPage } from '../pages/AppointmentsPage'
 import { AvailabilityPage } from '../pages/AvailabilityPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
+import { ProfilePage } from '../pages/ProfilePage'
 import { PublicBookingPage } from '../pages/PublicBookingPage'
 import { PublicLinkPage } from '../pages/PublicLinkPage'
 import { RegisterPage } from '../pages/RegisterPage'
@@ -30,6 +31,7 @@ export function AppRouter() {
         <Route path="appointments" element={<AppointmentsPage />} />
         <Route path="availability" element={<AvailabilityPage />} />
         <Route path="public-link" element={<PublicLinkPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
       <Route path="/:slug" element={<PublicBookingPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />

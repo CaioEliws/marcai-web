@@ -432,6 +432,76 @@ Regras frontend:
 
 ---
 
+## Account Profile
+
+Representa o perfil do usuário autenticado no painel privado.
+
+Endpoints privados:
+
+```txt
+GET    /api/v1/dashboard/profile
+PUT    /api/v1/dashboard/profile
+PUT    /api/v1/dashboard/profile/password
+PUT    /api/v1/dashboard/profile/avatar
+GET    /api/v1/dashboard/profile/avatar
+DELETE /api/v1/dashboard/profile/avatar
+```
+
+Profile response:
+
+```json
+{
+  "id": "uuid",
+  "name": "Caio Elias",
+  "email": "caio@email.com",
+  "role": "OWNER",
+  "avatarUrl": "/api/v1/dashboard/profile/avatar"
+}
+```
+
+`avatarUrl` pode ser `null` quando não houver imagem.
+
+Update profile payload:
+
+```json
+{
+  "name": "Caio Elias",
+  "email": "novo@email.com"
+}
+```
+
+Password payload:
+
+```json
+{
+  "currentPassword": "senhaAtual123",
+  "newPassword": "novaSenha123",
+  "confirmPassword": "novaSenha123"
+}
+```
+
+Avatar upload:
+
+```txt
+PUT /api/v1/dashboard/profile/avatar
+Content-Type: multipart/form-data
+campo: file
+```
+
+Regras frontend:
+
+* não enviar `id`, `role`, `userId` ou `businessId` em payloads de edição
+* não enviar avatar em JSON ou base64
+* usar `FormData` e deixar o navegador definir o boundary multipart
+* aceitar apenas `image/jpeg` e `image/png` no frontend
+* rejeitar SVG, GIF e arquivos acima de 2MB antes de enviar
+* backend continua sendo a fonte de verdade para validação final da imagem
+* não logar senha, arquivo, bytes, base64 ou payload sensível
+* mutações privadas usam CSRF via `X-XSRF-TOKEN`
+* `GET /avatar` retorna bytes da imagem e exige autenticação
+
+---
+
 ## ServiceItem
 
 Representa serviço oferecido pela empresa.

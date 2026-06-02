@@ -94,6 +94,18 @@ function shouldSendXsrfToken(path: string, method: string) {
   return mutableMethods.has(method) && path.startsWith(privateDashboardPathPrefix)
 }
 
+function isFormDataBody(body: unknown): body is FormData {
+  return typeof FormData !== 'undefined' && body instanceof FormData
+}
+
+function serializeRequestBody(body: unknown): BodyInit {
+  if (isFormDataBody(body)) {
+    return body
+  }
+
+  return JSON.stringify(body)
+}
+
 function buildApiUrl(path: string): URL {
   const baseUrl = env.VITE_API_BASE_URL
 
@@ -126,7 +138,11 @@ async function request<TSchema extends z.ZodType>(
   const headers = new Headers(options.headers)
   const method = getRequestMethod(options)
 
-  if (options.body !== undefined && !headers.has('Content-Type')) {
+  if (
+    options.body !== undefined &&
+    !isFormDataBody(options.body) &&
+    !headers.has('Content-Type')
+  ) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -140,7 +156,8 @@ async function request<TSchema extends z.ZodType>(
 
   const response = await fetch(buildApiUrl(path), {
     ...options,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body:
+      options.body === undefined ? undefined : serializeRequestBody(options.body),
     credentials: 'include',
     headers,
   })

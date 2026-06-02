@@ -6,10 +6,12 @@ import {
   LogOut,
   Menu,
   Scissors,
+  User,
 } from 'lucide-react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/utils'
+import { useAccountProfileQuery } from '@/features/account/hooks/useAccount'
 import { useLogoutMutation, useSessionQuery } from '@/features/auth/hooks/useAuth'
 
 const navigationItems = [
@@ -18,6 +20,7 @@ const navigationItems = [
   { to: '/dashboard/appointments', label: 'Agendamentos', icon: Calendar },
   { to: '/dashboard/availability', label: 'Horários', icon: Clock },
   { to: '/dashboard/public-link', label: 'Link público', icon: LinkIcon },
+  { to: '/dashboard/profile', label: 'Perfil', icon: User },
 ]
 
 function getInitials(name: string) {
@@ -30,11 +33,73 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
+function buildAvatarSrc(avatarUrl: string | null | undefined, version: number) {
+  if (!avatarUrl) {
+    return undefined
+  }
+
+  const separator = avatarUrl.includes('?') ? '&' : '?'
+
+  return `${avatarUrl}${separator}v=${encodeURIComponent(String(version))}`
+}
+
+type UserSummaryProps = {
+  avatarSrc: string | undefined
+  className?: string
+  label: string
+  name: string
+  role: string
+}
+
+function UserSummary({
+  avatarSrc,
+  className,
+  label,
+  name,
+  role,
+}: UserSummaryProps) {
+  return (
+    <Link
+      to="/dashboard/profile"
+      aria-label={label}
+      className={cn(
+        'flex min-w-0 items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+        className,
+      )}
+    >
+      <div className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+        {avatarSrc ? (
+          <img
+            src={avatarSrc}
+            alt=""
+            className="h-full w-full object-cover"
+            aria-hidden="true"
+          />
+        ) : (
+          <span>{getInitials(name)}</span>
+        )}
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{name}</p>
+        <p className="truncate text-xs text-muted-foreground">{role}</p>
+      </div>
+    </Link>
+  )
+}
+
 export function PrivateLayout() {
   const navigate = useNavigate()
   const sessionQuery = useSessionQuery()
+  const accountProfileQuery = useAccountProfileQuery()
   const logoutMutation = useLogoutMutation()
   const session = sessionQuery.data
+  const profile = accountProfileQuery.data
+  const userName = profile?.name ?? session?.name ?? 'Usuário'
+  const userRole = profile?.role ?? session?.role ?? 'Conta'
+  const avatarSrc = buildAvatarSrc(
+    profile?.avatarUrl,
+    accountProfileQuery.dataUpdatedAt,
+  )
 
   async function handleLogout() {
     try {
@@ -72,19 +137,13 @@ export function PrivateLayout() {
         </nav>
 
         <div className="border-t p-4">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-              {session ? getInitials(session.name) : 'M'}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">
-                {session?.name ?? 'Usuário'}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {session?.role ?? 'Conta'}
-              </p>
-            </div>
-          </div>
+          <UserSummary
+            avatarSrc={avatarSrc}
+            className="mb-3"
+            label={`Abrir perfil de ${userName} na barra lateral`}
+            name={userName}
+            role={userRole}
+          />
           <Button
             type="button"
             variant="outline"
@@ -120,10 +179,13 @@ export function PrivateLayout() {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="hidden text-right sm:block">
-                <p className="text-sm font-medium">{session?.name}</p>
-                <p className="text-xs text-muted-foreground">{session?.role}</p>
-              </div>
+              <UserSummary
+                avatarSrc={avatarSrc}
+                className="hidden p-1.5 sm:flex"
+                label={`Abrir perfil de ${userName} no topo`}
+                name={userName}
+                role={userRole}
+              />
               <Button
                 type="button"
                 variant="outline"
