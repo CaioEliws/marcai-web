@@ -20,6 +20,13 @@ export function formatShortTime(time: string) {
   return time.slice(0, 5)
 }
 
+export function formatCurrency(value: number) {
+  return new Intl.NumberFormat('pt-BR', {
+    currency: 'BRL',
+    style: 'currency',
+  }).format(value)
+}
+
 export function getAppointmentStatusLabel(status: AppointmentStatus) {
   return statusLabels[status]
 }
