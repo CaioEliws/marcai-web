@@ -24,6 +24,7 @@ import {
 import type { ServiceFormFieldErrors, ServiceFormValues } from './serviceFormUtils'
 
 type ServiceFormProps = {
+  apiFieldErrors: ServiceFormFieldErrors
   error: string | null
   initialService: Service | null
   isSubmitting: boolean
@@ -41,6 +42,7 @@ function getInitialValues(service: Service | null) {
 }
 
 export function ServiceForm({
+  apiFieldErrors,
   error,
   initialService,
   isSubmitting,
@@ -56,6 +58,7 @@ export function ServiceForm({
   )
   const [fieldErrors, setFieldErrors] = useState<ServiceFormFieldErrors>({})
   const isEditing = initialService !== null
+  const visibleFieldErrors = { ...apiFieldErrors, ...fieldErrors }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -133,17 +136,23 @@ export function ServiceForm({
               <Input
                 id="service-name"
                 value={name}
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) => {
+                  setName(event.target.value)
+                  setFieldErrors((currentErrors) => ({
+                    ...currentErrors,
+                    name: undefined,
+                  }))
+                }}
                 maxLength={120}
-                aria-invalid={Boolean(fieldErrors.name)}
+                aria-invalid={Boolean(visibleFieldErrors.name)}
                 aria-describedby={
-                  fieldErrors.name ? 'service-name-error' : undefined
+                  visibleFieldErrors.name ? 'service-name-error' : undefined
                 }
                 disabled={isSubmitting}
               />
-              {fieldErrors.name ? (
+              {visibleFieldErrors.name ? (
                 <p id="service-name-error" className="text-sm text-destructive">
-                  {fieldErrors.name}
+                  {visibleFieldErrors.name}
                 </p>
               ) : null}
             </div>
@@ -157,21 +166,27 @@ export function ServiceForm({
                 min={1}
                 max={720}
                 value={durationMinutes}
-                onChange={(event) => setDurationMinutes(event.target.value)}
-                aria-invalid={Boolean(fieldErrors.durationMinutes)}
+                onChange={(event) => {
+                  setDurationMinutes(event.target.value)
+                  setFieldErrors((currentErrors) => ({
+                    ...currentErrors,
+                    durationMinutes: undefined,
+                  }))
+                }}
+                aria-invalid={Boolean(visibleFieldErrors.durationMinutes)}
                 aria-describedby={
-                  fieldErrors.durationMinutes
+                  visibleFieldErrors.durationMinutes
                     ? 'service-duration-error'
                     : undefined
                 }
                 disabled={isSubmitting}
               />
-              {fieldErrors.durationMinutes ? (
+              {visibleFieldErrors.durationMinutes ? (
                 <p
                   id="service-duration-error"
                   className="text-sm text-destructive"
                 >
-                  {fieldErrors.durationMinutes}
+                  {visibleFieldErrors.durationMinutes}
                 </p>
               ) : null}
             </div>
@@ -183,22 +198,28 @@ export function ServiceForm({
               <Textarea
                 id="service-description"
                 value={description}
-                onChange={(event) => setDescription(event.target.value)}
+                onChange={(event) => {
+                  setDescription(event.target.value)
+                  setFieldErrors((currentErrors) => ({
+                    ...currentErrors,
+                    description: undefined,
+                  }))
+                }}
                 maxLength={500}
-                aria-invalid={Boolean(fieldErrors.description)}
+                aria-invalid={Boolean(visibleFieldErrors.description)}
                 aria-describedby={
-                  fieldErrors.description
+                  visibleFieldErrors.description
                     ? 'service-description-error'
                     : undefined
                 }
                 disabled={isSubmitting}
               />
-              {fieldErrors.description ? (
+              {visibleFieldErrors.description ? (
                 <p
                   id="service-description-error"
                   className="text-sm text-destructive"
                 >
-                  {fieldErrors.description}
+                  {visibleFieldErrors.description}
                 </p>
               ) : null}
             </div>
@@ -211,16 +232,22 @@ export function ServiceForm({
                 inputMode="decimal"
                 placeholder="120,00"
                 value={price}
-                onChange={(event) => setPrice(event.target.value)}
-                aria-invalid={Boolean(fieldErrors.price)}
+                onChange={(event) => {
+                  setPrice(event.target.value)
+                  setFieldErrors((currentErrors) => ({
+                    ...currentErrors,
+                    price: undefined,
+                  }))
+                }}
+                aria-invalid={Boolean(visibleFieldErrors.price)}
                 aria-describedby={
-                  fieldErrors.price ? 'service-price-error' : undefined
+                  visibleFieldErrors.price ? 'service-price-error' : undefined
                 }
                 disabled={isSubmitting}
               />
-              {fieldErrors.price ? (
+              {visibleFieldErrors.price ? (
                 <p id="service-price-error" className="text-sm text-destructive">
-                  {fieldErrors.price}
+                  {visibleFieldErrors.price}
                 </p>
               ) : null}
             </div>

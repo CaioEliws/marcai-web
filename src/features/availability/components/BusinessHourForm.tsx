@@ -27,6 +27,7 @@ import type {
 } from './businessHourUtils'
 
 type BusinessHourFormProps = {
+  apiFieldErrors: BusinessHourFormFieldErrors
   blockedDayOfWeeks: number[]
   error: string | null
   initialBusinessHour: BusinessHour | null
@@ -48,6 +49,7 @@ function getInitialValues(businessHour: BusinessHour | null) {
 }
 
 export function BusinessHourForm({
+  apiFieldErrors,
   blockedDayOfWeeks,
   error,
   initialBusinessHour,
@@ -69,6 +71,7 @@ export function BusinessHourForm({
       day.value === initialBusinessHour?.dayOfWeek,
   )
   const hasNoDaysAvailable = availableDays.length === 0 && !isEditing
+  const visibleFieldErrors = { ...apiFieldErrors, ...fieldErrors }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -154,15 +157,23 @@ export function BusinessHourForm({
               <select
                 id="business-hour-day"
                 value={dayOfWeek}
-                onChange={(event) => setDayOfWeek(event.target.value)}
+                onChange={(event) => {
+                  setDayOfWeek(event.target.value)
+                  setFieldErrors((currentErrors) => ({
+                    ...currentErrors,
+                    dayOfWeek: undefined,
+                  }))
+                }}
                 className={cn(
                   'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-                  fieldErrors.dayOfWeek &&
+                  visibleFieldErrors.dayOfWeek &&
                     'border-destructive focus-visible:ring-destructive/20',
                 )}
-                aria-invalid={Boolean(fieldErrors.dayOfWeek)}
+                aria-invalid={Boolean(visibleFieldErrors.dayOfWeek)}
                 aria-describedby={
-                  fieldErrors.dayOfWeek ? 'business-hour-day-error' : undefined
+                  visibleFieldErrors.dayOfWeek
+                    ? 'business-hour-day-error'
+                    : undefined
                 }
                 disabled={isSubmitting || hasNoDaysAvailable}
               >
@@ -173,12 +184,12 @@ export function BusinessHourForm({
                   </option>
                 ))}
               </select>
-              {fieldErrors.dayOfWeek ? (
+              {visibleFieldErrors.dayOfWeek ? (
                 <p
                   id="business-hour-day-error"
                   className="text-sm text-destructive"
                 >
-                  {fieldErrors.dayOfWeek}
+                  {visibleFieldErrors.dayOfWeek}
                 </p>
               ) : null}
             </div>
@@ -189,21 +200,27 @@ export function BusinessHourForm({
                 id="business-hour-opening"
                 type="time"
                 value={openingTime}
-                onChange={(event) => setOpeningTime(event.target.value)}
-                aria-invalid={Boolean(fieldErrors.openingTime)}
+                onChange={(event) => {
+                  setOpeningTime(event.target.value)
+                  setFieldErrors((currentErrors) => ({
+                    ...currentErrors,
+                    openingTime: undefined,
+                  }))
+                }}
+                aria-invalid={Boolean(visibleFieldErrors.openingTime)}
                 aria-describedby={
-                  fieldErrors.openingTime
+                  visibleFieldErrors.openingTime
                     ? 'business-hour-opening-error'
                     : undefined
                 }
                 disabled={isSubmitting || hasNoDaysAvailable}
               />
-              {fieldErrors.openingTime ? (
+              {visibleFieldErrors.openingTime ? (
                 <p
                   id="business-hour-opening-error"
                   className="text-sm text-destructive"
                 >
-                  {fieldErrors.openingTime}
+                  {visibleFieldErrors.openingTime}
                 </p>
               ) : null}
             </div>
@@ -214,21 +231,27 @@ export function BusinessHourForm({
                 id="business-hour-closing"
                 type="time"
                 value={closingTime}
-                onChange={(event) => setClosingTime(event.target.value)}
-                aria-invalid={Boolean(fieldErrors.closingTime)}
+                onChange={(event) => {
+                  setClosingTime(event.target.value)
+                  setFieldErrors((currentErrors) => ({
+                    ...currentErrors,
+                    closingTime: undefined,
+                  }))
+                }}
+                aria-invalid={Boolean(visibleFieldErrors.closingTime)}
                 aria-describedby={
-                  fieldErrors.closingTime
+                  visibleFieldErrors.closingTime
                     ? 'business-hour-closing-error'
                     : undefined
                 }
                 disabled={isSubmitting || hasNoDaysAvailable}
               />
-              {fieldErrors.closingTime ? (
+              {visibleFieldErrors.closingTime ? (
                 <p
                   id="business-hour-closing-error"
                   className="text-sm text-destructive"
                 >
-                  {fieldErrors.closingTime}
+                  {visibleFieldErrors.closingTime}
                 </p>
               ) : null}
             </div>

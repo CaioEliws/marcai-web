@@ -20,6 +20,7 @@ import type { PublicAppointmentFieldErrors } from './publicBookingUtils'
 
 type PublicAppointmentFormProps = {
   appointmentDate: string
+  apiFieldErrors: PublicAppointmentFieldErrors
   error: string | null
   isSubmitting: boolean
   onSubmit: (values: {
@@ -32,6 +33,7 @@ type PublicAppointmentFormProps = {
 
 export function PublicAppointmentForm({
   appointmentDate,
+  apiFieldErrors,
   error,
   isSubmitting,
   onSubmit,
@@ -43,6 +45,7 @@ export function PublicAppointmentForm({
   const [fieldErrors, setFieldErrors] = useState<PublicAppointmentFieldErrors>(
     {},
   )
+  const visibleFieldErrors = { ...apiFieldErrors, ...fieldErrors }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -88,7 +91,9 @@ export function PublicAppointmentForm({
   }
 
   const selectionError =
-    fieldErrors.serviceId || fieldErrors.appointmentDate || fieldErrors.startTime
+    visibleFieldErrors.serviceId ||
+    visibleFieldErrors.appointmentDate ||
+    visibleFieldErrors.startTime
 
   return (
     <Card>
@@ -118,18 +123,24 @@ export function PublicAppointmentForm({
               <Input
                 id="client-name"
                 value={clientName}
-                onChange={(event) => setClientName(event.target.value)}
+                onChange={(event) => {
+                  setClientName(event.target.value)
+                  setFieldErrors((currentErrors) => ({
+                    ...currentErrors,
+                    clientName: undefined,
+                  }))
+                }}
                 autoComplete="name"
                 maxLength={120}
-                aria-invalid={Boolean(fieldErrors.clientName)}
+                aria-invalid={Boolean(visibleFieldErrors.clientName)}
                 aria-describedby={
-                  fieldErrors.clientName ? 'client-name-error' : undefined
+                  visibleFieldErrors.clientName ? 'client-name-error' : undefined
                 }
                 disabled={isSubmitting}
               />
-              {fieldErrors.clientName ? (
+              {visibleFieldErrors.clientName ? (
                 <p id="client-name-error" className="text-sm text-destructive">
-                  {fieldErrors.clientName}
+                  {visibleFieldErrors.clientName}
                 </p>
               ) : null}
             </div>
@@ -139,20 +150,26 @@ export function PublicAppointmentForm({
               <Input
                 id="client-phone"
                 value={clientPhone}
-                onChange={(event) => setClientPhone(event.target.value)}
+                onChange={(event) => {
+                  setClientPhone(event.target.value)
+                  setFieldErrors((currentErrors) => ({
+                    ...currentErrors,
+                    clientPhone: undefined,
+                  }))
+                }}
                 autoComplete="tel"
                 inputMode="tel"
                 maxLength={30}
                 placeholder="11999999999"
-                aria-invalid={Boolean(fieldErrors.clientPhone)}
+                aria-invalid={Boolean(visibleFieldErrors.clientPhone)}
                 aria-describedby={
-                  fieldErrors.clientPhone ? 'client-phone-error' : undefined
+                  visibleFieldErrors.clientPhone ? 'client-phone-error' : undefined
                 }
                 disabled={isSubmitting}
               />
-              {fieldErrors.clientPhone ? (
+              {visibleFieldErrors.clientPhone ? (
                 <p id="client-phone-error" className="text-sm text-destructive">
-                  {fieldErrors.clientPhone}
+                  {visibleFieldErrors.clientPhone}
                 </p>
               ) : null}
             </div>

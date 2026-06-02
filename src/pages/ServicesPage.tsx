@@ -1,10 +1,15 @@
 import { useState } from 'react'
-import { ApiContractError, ApiError } from '@/shared/api/httpClient'
+import {
+  ApiContractError,
+  ApiError,
+  getApiFieldErrors,
+} from '@/shared/api/httpClient'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { ServiceForm } from '@/features/services/components/ServiceForm'
 import { ServicesList } from '@/features/services/components/ServicesList'
 import type { ServiceStatusFilterValue } from '@/features/services/components/ServiceStatusFilter'
 import type { ServiceFormValues } from '@/features/services/components/serviceFormUtils'
+import type { ServiceFormFieldErrors } from '@/features/services/components/serviceFormUtils'
 import {
   useCreateServiceMutation,
   useDisableServiceMutation,
@@ -74,6 +79,9 @@ export function ServicesPage() {
     useState<ServiceStatusFilterValue>('active')
   const [formResetSignal, setFormResetSignal] = useState(0)
   const [formError, setFormError] = useState<string | null>(null)
+  const [formFieldErrors, setFormFieldErrors] = useState<ServiceFormFieldErrors>(
+    {},
+  )
   const [actionError, setActionError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [pendingServiceId, setPendingServiceId] = useState<string | null>(null)
@@ -81,11 +89,13 @@ export function ServicesPage() {
   function resetForm() {
     setEditingService(null)
     setFormError(null)
+    setFormFieldErrors({})
     setFormResetSignal((currentValue) => currentValue + 1)
   }
 
   async function handleSubmitService(values: ServiceFormValues) {
     setFormError(null)
+    setFormFieldErrors({})
     setSuccessMessage(null)
 
     try {
@@ -105,6 +115,14 @@ export function ServicesPage() {
 
       resetForm()
     } catch (error) {
+      setFormFieldErrors(
+        getApiFieldErrors(error, [
+          'description',
+          'durationMinutes',
+          'name',
+          'price',
+        ] as const),
+      )
       setFormError(getSafeErrorMessage(error))
     }
   }
@@ -132,6 +150,7 @@ export function ServicesPage() {
   function handleEditService(service: Service) {
     setEditingService(service)
     setFormError(null)
+    setFormFieldErrors({})
     setActionError(null)
     setSuccessMessage(null)
     setFormResetSignal((currentValue) => currentValue + 1)
@@ -163,6 +182,7 @@ export function ServicesPage() {
 
       <ServiceForm
         key={`${editingService?.id ?? 'new'}-${formResetSignal}`}
+        apiFieldErrors={formFieldErrors}
         error={formError}
         initialService={editingService}
         isSubmitting={isSubmitting}

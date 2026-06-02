@@ -1,6 +1,10 @@
 import { useRef, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
-import { ApiContractError, ApiError } from '@/shared/api/httpClient'
+import {
+  ApiContractError,
+  ApiError,
+  getApiFieldError,
+} from '@/shared/api/httpClient'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
@@ -125,7 +129,7 @@ export function PublicLinkPage() {
       setIsEditingSlug(false)
       setSaveMessage('Slug atualizado com sucesso.')
     } catch (error) {
-      setSlugError(getSafeErrorMessage(error))
+      setSlugError(getApiFieldError(error, 'slug') ?? getSafeErrorMessage(error))
     }
   }
 

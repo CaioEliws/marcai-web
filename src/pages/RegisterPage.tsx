@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { ApiError } from '@/shared/api/httpClient'
+import { ApiError, getApiFieldErrors } from '@/shared/api/httpClient'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Button } from '@/shared/components/ui/button'
 import {
@@ -96,6 +96,15 @@ export function RegisterPage() {
       setBusinessName('')
       setBusinessPhone('')
     } catch (error) {
+      const apiFieldErrors = getApiFieldErrors(error, [
+        'businessName',
+        'businessPhone',
+        'email',
+        'name',
+        'password',
+      ] as const)
+
+      setFieldErrors(apiFieldErrors)
       setFormError(getRegisterErrorMessage(error))
     }
   }
@@ -260,7 +269,7 @@ export function RegisterPage() {
                       id="business-phone-error"
                       className="text-sm text-destructive"
                     >
-                      Informe um telefone com 10 a 30 números.
+                      {fieldErrors.businessPhone}
                     </p>
                   ) : null}
                 </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { ApiError } from '@/shared/api/httpClient'
+import { ApiError, getApiFieldErrors } from '@/shared/api/httpClient'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Button } from '@/shared/components/ui/button'
 import {
@@ -62,6 +62,10 @@ export function LoginPage() {
       await loginMutation.mutateAsync(parsedPayload.data)
       navigate('/dashboard', { replace: true })
     } catch (error) {
+      if (error instanceof ApiError && error.status === 400) {
+        setFieldErrors(getApiFieldErrors(error, ['email', 'password'] as const))
+      }
+
       setFormError(getLoginErrorMessage(error))
     }
   }

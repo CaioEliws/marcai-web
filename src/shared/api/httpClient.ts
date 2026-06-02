@@ -2,16 +2,37 @@ import { z } from 'zod'
 import { env } from '../config/env'
 
 const apiErrorSchema = z.object({
+  fieldErrors: z
+    .array(
+      z.object({
+        field: z.string(),
+        message: z.string(),
+      }),
+    )
+    .optional(),
   message: z.string().optional(),
 })
 
+export type ApiFieldError = z.infer<typeof apiErrorSchema>['fieldErrors'] extends
+  | Array<infer TFieldError>
+  | undefined
+  ? TFieldError
+  : never
+
 export class ApiError extends Error {
+  readonly fieldErrors: ApiFieldError[]
   readonly payload: unknown
   readonly status: number
 
-  constructor(message: string, status: number, payload: unknown) {
+  constructor(
+    message: string,
+    status: number,
+    payload: unknown,
+    fieldErrors: ApiFieldError[] = [],
+  ) {
     super(message)
     this.name = 'ApiError'
+    this.fieldErrors = fieldErrors
     this.payload = payload
     this.status = status
   }
@@ -27,6 +48,32 @@ export class ApiContractError extends Error {
     this.issues = issues
     this.payload = payload
   }
+}
+
+export function getApiFieldError(error: unknown, field: string) {
+  if (!(error instanceof ApiError)) {
+    return undefined
+  }
+
+  return error.fieldErrors.find((fieldError) => fieldError.field === field)
+    ?.message
+}
+
+export function getApiFieldErrors<TField extends string>(
+  error: unknown,
+  fields: readonly TField[],
+) {
+  const fieldErrors: Partial<Record<TField, string>> = {}
+
+  for (const field of fields) {
+    const message = getApiFieldError(error, field)
+
+    if (message) {
+      fieldErrors[field] = message
+    }
+  }
+
+  return fieldErrors
 }
 
 type RequestOptions = Omit<RequestInit, 'body' | 'credentials'> & {
@@ -84,6 +131,7 @@ async function request<TSchema extends z.ZodType>(
       parsedError.data?.message ?? 'Erro ao comunicar com a API.',
       response.status,
       payload,
+      parsedError.data?.fieldErrors ?? [],
     )
   }
 

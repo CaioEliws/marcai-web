@@ -1,9 +1,14 @@
 import { useState } from 'react'
-import { ApiContractError, ApiError } from '@/shared/api/httpClient'
+import {
+  ApiContractError,
+  ApiError,
+  getApiFieldErrors,
+} from '@/shared/api/httpClient'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { BusinessHourForm } from '@/features/availability/components/BusinessHourForm'
 import { BusinessHoursList } from '@/features/availability/components/BusinessHoursList'
 import type { BusinessHourFormValues } from '@/features/availability/components/businessHourUtils'
+import type { BusinessHourFormFieldErrors } from '@/features/availability/components/businessHourUtils'
 import {
   useBusinessHoursQuery,
   useCreateBusinessHourMutation,
@@ -61,6 +66,8 @@ export function AvailabilityPage() {
     useState<BusinessHour | null>(null)
   const [formResetSignal, setFormResetSignal] = useState(0)
   const [formError, setFormError] = useState<string | null>(null)
+  const [formFieldErrors, setFormFieldErrors] =
+    useState<BusinessHourFormFieldErrors>({})
   const [actionError, setActionError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [pendingBusinessHourId, setPendingBusinessHourId] = useState<
@@ -70,11 +77,13 @@ export function AvailabilityPage() {
   function resetForm() {
     setEditingBusinessHour(null)
     setFormError(null)
+    setFormFieldErrors({})
     setFormResetSignal((currentValue) => currentValue + 1)
   }
 
   async function handleSubmitBusinessHour(values: BusinessHourFormValues) {
     setFormError(null)
+    setFormFieldErrors({})
     setSuccessMessage(null)
 
     try {
@@ -94,6 +103,13 @@ export function AvailabilityPage() {
 
       resetForm()
     } catch (error) {
+      setFormFieldErrors(
+        getApiFieldErrors(error, [
+          'closingTime',
+          'dayOfWeek',
+          'openingTime',
+        ] as const),
+      )
       setFormError(getSafeErrorMessage(error))
     }
   }
@@ -156,6 +172,7 @@ export function AvailabilityPage() {
   function handleEditBusinessHour(businessHour: BusinessHour) {
     setEditingBusinessHour(businessHour)
     setFormError(null)
+    setFormFieldErrors({})
     setActionError(null)
     setSuccessMessage(null)
     setFormResetSignal((currentValue) => currentValue + 1)
@@ -191,6 +208,7 @@ export function AvailabilityPage() {
 
       <BusinessHourForm
         key={`${editingBusinessHour?.id ?? 'new'}-${formResetSignal}`}
+        apiFieldErrors={formFieldErrors}
         blockedDayOfWeeks={blockedDayOfWeeks}
         error={formError}
         initialBusinessHour={editingBusinessHour}

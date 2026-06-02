@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
+import { getApiFieldErrors } from '@/shared/api/httpClient'
 import { AvailableTimesSelector } from '@/features/public-booking/components/AvailableTimesSelector'
 import { BookingSuccess } from '@/features/public-booking/components/BookingSuccess'
 import { PublicAppointmentForm } from '@/features/public-booking/components/PublicAppointmentForm'
@@ -14,6 +15,7 @@ import {
   usePublicServicesQuery,
 } from '@/features/public-booking/hooks/usePublicBooking'
 import type { PublicAppointment } from '@/features/public-booking/types/publicBooking.type'
+import type { PublicAppointmentFieldErrors } from '@/features/public-booking/components/publicBookingUtils'
 
 export function PublicBookingPage() {
   const { slug = '' } = useParams()
@@ -24,6 +26,8 @@ export function PublicBookingPage() {
   const [appointmentDate, setAppointmentDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
+  const [formFieldErrors, setFormFieldErrors] =
+    useState<PublicAppointmentFieldErrors>({})
   const [confirmedAppointment, setConfirmedAppointment] =
     useState<PublicAppointment | null>(null)
   const availableTimesQuery = useAvailableTimesQuery({
@@ -36,12 +40,14 @@ export function PublicBookingPage() {
     setSelectedServiceId(serviceId)
     setSelectedTime('')
     setFormError(null)
+    setFormFieldErrors({})
   }
 
   function handleDateChange(date: string) {
     setAppointmentDate(date)
     setSelectedTime('')
     setFormError(null)
+    setFormFieldErrors({})
   }
 
   async function handleCreateAppointment(values: {
@@ -49,6 +55,7 @@ export function PublicBookingPage() {
     clientPhone: string
   }) {
     setFormError(null)
+    setFormFieldErrors({})
 
     try {
       const response = await createAppointmentMutation.mutateAsync({
@@ -64,6 +71,15 @@ export function PublicBookingPage() {
 
       setConfirmedAppointment(response)
     } catch (error) {
+      setFormFieldErrors(
+        getApiFieldErrors(error, [
+          'appointmentDate',
+          'clientName',
+          'clientPhone',
+          'serviceId',
+          'startTime',
+        ] as const),
+      )
       setFormError(getPublicBookingErrorMessage(error))
     }
   }
@@ -141,6 +157,7 @@ export function PublicBookingPage() {
 
             <PublicAppointmentForm
               appointmentDate={appointmentDate}
+              apiFieldErrors={formFieldErrors}
               error={formError}
               isSubmitting={createAppointmentMutation.isPending}
               onSubmit={handleCreateAppointment}
