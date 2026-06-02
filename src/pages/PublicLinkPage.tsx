@@ -1,28 +1,24 @@
-import { useRef, useState } from 'react'
-import { ExternalLink } from 'lucide-react'
+import { useState } from 'react'
 import {
   ApiContractError,
   ApiError,
   getApiFieldError,
 } from '@/shared/api/httpClient'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
-import { Badge } from '@/shared/components/ui/badge'
-import { Button } from '@/shared/components/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/shared/components/ui/card'
-import { Input } from '@/shared/components/ui/input'
-import { Label } from '@/shared/components/ui/label'
+import { PublicLinkCard } from '@/features/business/components/PublicLinkCard'
+import {
+  getSlugValidationMessage,
+  toUpdateBusinessSlugPayload,
+} from '@/features/business/components/businessLinkUtils'
 import {
   useCurrentBusinessQuery,
   useUpdateBusinessMutation,
 } from '@/features/business/hooks/useBusiness'
 import { businessSlugSchema } from '@/features/business/schemas/business.schema'
-import type { Business } from '@/features/business/types/business.type'
 
 function getSafeErrorMessage(error: unknown) {
   if (error instanceof ApiError) {
@@ -54,28 +50,9 @@ function getSafeErrorMessage(error: unknown) {
   return 'Não foi possível carregar o link público. Tente novamente em instantes.'
 }
 
-function getSlugValidationMessage() {
-  return 'Use 3 a 80 caracteres: letras minúsculas, números e hífen, sem espaços, acentos ou hífen no início/fim.'
-}
-
-function toUpdatePayload(business: Business, slug: string) {
-  return {
-    address: business.address,
-    city: business.city,
-    description: business.description,
-    name: business.name,
-    phone: business.phone,
-    slug,
-    state: business.state,
-  }
-}
-
 export function PublicLinkPage() {
   const businessQuery = useCurrentBusinessQuery()
   const updateBusinessMutation = useUpdateBusinessMutation()
-  const inputRef = useRef<HTMLInputElement>(null)
-  const slugInputRef = useRef<HTMLInputElement>(null)
-  const [copyMessage, setCopyMessage] = useState<string | null>(null)
   const [isEditingSlug, setIsEditingSlug] = useState(false)
   const [slugDraft, setSlugDraft] = useState('')
   const [slugError, setSlugError] = useState<string | null>(null)
@@ -96,7 +73,6 @@ export function PublicLinkPage() {
     setSlugDraft(business.slug)
     setSlugError(null)
     setSaveMessage(null)
-    setCopyMessage(null)
     setIsEditingSlug(true)
   }
 
@@ -123,38 +99,13 @@ export function PublicLinkPage() {
 
     try {
       await updateBusinessMutation.mutateAsync(
-        toUpdatePayload(business, parsedSlug.data),
+        toUpdateBusinessSlugPayload(business, parsedSlug.data),
       )
       setSlugDraft('')
       setIsEditingSlug(false)
       setSaveMessage('Slug atualizado com sucesso.')
     } catch (error) {
       setSlugError(getApiFieldError(error, 'slug') ?? getSafeErrorMessage(error))
-    }
-  }
-
-  async function handleCopyLink() {
-    setCopyMessage(null)
-
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(publicLink)
-        setCopyMessage('Link copiado.')
-        return
-      }
-
-      inputRef.current?.select()
-      const copied = document.execCommand('copy')
-      setCopyMessage(
-        copied
-          ? 'Link copiado.'
-          : 'Não foi possível copiar automaticamente. Selecione e copie o link.',
-      )
-    } catch {
-      inputRef.current?.select()
-      setCopyMessage(
-        'Não foi possível copiar automaticamente. Selecione e copie o link.',
-      )
     }
   }
 
@@ -206,114 +157,22 @@ export function PublicLinkPage() {
             </Alert>
           ) : null}
 
-          {!business.active ? (
-            <Alert className="border-destructive/50 text-destructive">
-              <AlertDescription>
-                Esta empresa está inativa. O link pode não estar disponível
-                publicamente.
-              </AlertDescription>
-            </Alert>
-          ) : null}
-
-          <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-center gap-2">
-                <CardTitle>{business.name}</CardTitle>
-                <Badge variant={business.active ? 'default' : 'secondary'}>
-                  {business.active ? 'Ativa' : 'Inativa'}
-                </Badge>
-              </div>
-              <CardDescription>
-                Clientes não precisam fazer login para acessar este link.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-5">
-              <div className="grid gap-2">
-                <Label htmlFor="business-slug">Slug</Label>
-                <Input
-                  ref={slugInputRef}
-                  id="business-slug"
-                  value={previewSlug}
-                  onChange={(event) => {
-                    setSlugDraft(event.target.value)
-                    setSlugError(null)
-                    setSaveMessage(null)
-                  }}
-                  readOnly={!isEditingSlug}
-                  aria-invalid={Boolean(slugError)}
-                  aria-describedby={
-                    slugError ? 'business-slug-error' : 'business-slug-help'
-                  }
-                  className="font-mono text-sm"
-                  maxLength={80}
-                />
-                <p id="business-slug-help" className="text-sm text-muted-foreground">
-                  Alterar o slug muda o link público e pode quebrar links antigos
-                  já compartilhados.
-                </p>
-                {slugError ? (
-                  <p id="business-slug-error" className="text-sm text-destructive">
-                    {slugError}
-                  </p>
-                ) : null}
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  {isEditingSlug ? (
-                    <>
-                      <Button
-                        type="button"
-                        onClick={() => void handleSaveSlug()}
-                        disabled={updateBusinessMutation.isPending}
-                      >
-                        {updateBusinessMutation.isPending
-                          ? 'Salvando...'
-                          : 'Salvar'}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCancelEditingSlug}
-                        disabled={updateBusinessMutation.isPending}
-                      >
-                        Cancelar
-                      </Button>
-                    </>
-                  ) : (
-                    <Button type="button" onClick={handleStartEditingSlug}>
-                      Editar slug
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="public-link">Link público completo</Label>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Input
-                    ref={inputRef}
-                    id="public-link"
-                    value={publicLink}
-                    readOnly
-                    className="font-mono text-sm"
-                  />
-                  <Button type="button" onClick={() => void handleCopyLink()}>
-                    Copiar link
-                  </Button>
-                </div>
-                {copyMessage ? (
-                  <p className="text-sm text-muted-foreground">{copyMessage}</p>
-                ) : null}
-              </div>
-
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button asChild variant="outline">
-                  <a href={publicLink} target="_blank" rel="noreferrer">
-                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                    Abrir página pública
-                  </a>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <PublicLinkCard
+            business={business}
+            isEditingSlug={isEditingSlug}
+            isSavingSlug={updateBusinessMutation.isPending}
+            onCancelEditingSlug={handleCancelEditingSlug}
+            onSaveSlug={() => void handleSaveSlug()}
+            onSlugChange={(slug) => {
+              setSlugDraft(slug)
+              setSlugError(null)
+              setSaveMessage(null)
+            }}
+            onStartEditingSlug={handleStartEditingSlug}
+            previewSlug={previewSlug}
+            publicLink={publicLink}
+            slugError={slugError}
+          />
         </>
       ) : null}
     </section>

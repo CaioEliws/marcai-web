@@ -13,6 +13,7 @@ import {
 } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { normalizePhone } from '@/shared/lib/phone'
 import {
   useRegisterMutation,
   useSessionQuery,
@@ -23,10 +24,6 @@ import type { RegisterResponse } from '@/features/auth/types/auth.type'
 type FieldErrors = Partial<
   Record<'businessName' | 'businessPhone' | 'email' | 'name' | 'password', string>
 >
-
-function digitsOnly(value: string) {
-  return value.replace(/\D/g, '')
-}
 
 function getRegisterErrorMessage(error: unknown) {
   if (error instanceof ApiError) {
@@ -68,7 +65,7 @@ export function RegisterPage() {
 
     const parsedPayload = registerPayloadSchema.safeParse({
       businessName,
-      businessPhone: digitsOnly(businessPhone),
+      businessPhone: normalizePhone(businessPhone),
       email,
       name,
       password,

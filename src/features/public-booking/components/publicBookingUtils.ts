@@ -1,3 +1,4 @@
+export { normalizePhone } from '@/shared/lib/phone'
 import type { PublicService } from '../types/publicBooking.type'
 
 export type PublicAppointmentFieldErrors = Partial<
@@ -24,10 +25,6 @@ export function getTodayDateInputValue() {
   const offsetDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
 
   return offsetDate.toISOString().slice(0, 10)
-}
-
-export function normalizePhone(phone: string) {
-  return phone.replace(/\D/g, '')
 }
 
 export function getSelectedService(
