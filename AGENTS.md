@@ -346,7 +346,7 @@ Rotas iniciais prováveis:
  /dashboard/services
  /dashboard/appointments
  /dashboard/availability
- /book/:slug
+ /:slug
 ```
 
 Regras:
