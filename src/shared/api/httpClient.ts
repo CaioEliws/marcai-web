@@ -1,5 +1,11 @@
 import { z } from 'zod'
 import { env } from '../config/env'
+import { getCookieValue } from '../lib/cookies'
+
+const privateDashboardPathPrefix = '/api/v1/dashboard/'
+const xsrfCookieName = 'XSRF-TOKEN'
+const xsrfHeaderName = 'X-XSRF-TOKEN'
+const mutableMethods = new Set(['DELETE', 'PATCH', 'POST', 'PUT'])
 
 const apiErrorSchema = z.object({
   fieldErrors: z
@@ -80,6 +86,14 @@ type RequestOptions = Omit<RequestInit, 'body' | 'credentials'> & {
   body?: unknown
 }
 
+function getRequestMethod(options: RequestOptions) {
+  return (options.method ?? 'GET').toUpperCase()
+}
+
+function shouldSendXsrfToken(path: string, method: string) {
+  return mutableMethods.has(method) && path.startsWith(privateDashboardPathPrefix)
+}
+
 function buildApiUrl(path: string): URL {
   const baseUrl = env.VITE_API_BASE_URL
 
@@ -110,9 +124,18 @@ async function request<TSchema extends z.ZodType>(
   options: RequestOptions = {},
 ): Promise<z.infer<TSchema>> {
   const headers = new Headers(options.headers)
+  const method = getRequestMethod(options)
 
   if (options.body !== undefined && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
+  }
+
+  if (shouldSendXsrfToken(path, method) && !headers.has(xsrfHeaderName)) {
+    const xsrfToken = getCookieValue(xsrfCookieName)
+
+    if (xsrfToken) {
+      headers.set(xsrfHeaderName, xsrfToken)
+    }
   }
 
   const response = await fetch(buildApiUrl(path), {

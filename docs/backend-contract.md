@@ -84,6 +84,44 @@ O frontend deve:
 
 O login envia cookie HttpOnly pelo header `Set-Cookie`. O frontend não deve ler, salvar ou reenviar token manualmente.
 
+### CSRF
+
+O backend usa CSRF stateless via double-submit token para mutações privadas.
+
+Cookies envolvidos:
+
+```txt
+marcai_access_token = cookie HttpOnly de autenticação
+XSRF-TOKEN = cookie legível usado apenas como token CSRF
+```
+
+Para métodos mutáveis em rotas privadas de dashboard, o frontend deve ler o cookie `XSRF-TOKEN` no momento da request e enviar:
+
+```txt
+X-XSRF-TOKEN: <valor do cookie XSRF-TOKEN>
+```
+
+Aplicar CSRF apenas para:
+
+```txt
+POST   /api/v1/dashboard/**
+PUT    /api/v1/dashboard/**
+PATCH  /api/v1/dashboard/**
+DELETE /api/v1/dashboard/**
+```
+
+Não enviar header CSRF para:
+
+```txt
+GET
+POST /api/v1/auth/login
+POST /api/v1/auth/register
+POST /api/v1/auth/logout
+/api/v1/public/**
+```
+
+O frontend não deve armazenar o token CSRF em localStorage/sessionStorage nem expor o valor em logs. Se o cookie `XSRF-TOKEN` estiver ausente, a request deve seguir sem header e o backend deve responder `403`.
+
 ---
 
 ## Regra crítica: multi-tenancy
