@@ -95,7 +95,7 @@ marcai_access_token = cookie HttpOnly de autenticação
 XSRF-TOKEN = cookie legível usado apenas como token CSRF
 ```
 
-Para métodos mutáveis em rotas privadas de dashboard, o frontend deve ler o cookie `XSRF-TOKEN` no momento da request e enviar:
+O endpoint `GET /api/v1/auth/csrf` retorna `204 No Content` e emite/renova o cookie legível `XSRF-TOKEN`. Ter esse cookie sem login é esperado: ele é apenas proteção CSRF, não autenticação. Antes de métodos mutáveis em rotas privadas de dashboard, o frontend deve chamar esse endpoint, ler o cookie `XSRF-TOKEN` no momento da request e enviar:
 
 ```txt
 X-XSRF-TOKEN: <valor do cookie XSRF-TOKEN>
@@ -120,7 +120,7 @@ POST /api/v1/auth/logout
 /api/v1/public/**
 ```
 
-O frontend não deve armazenar o token CSRF em localStorage/sessionStorage nem expor o valor em logs. Se o cookie `XSRF-TOKEN` estiver ausente, a request deve seguir sem header e o backend deve responder `403`.
+O frontend não deve armazenar o token CSRF em localStorage/sessionStorage nem expor o valor em logs. Se o cookie `XSRF-TOKEN` estiver ausente ou inválido, o backend deve responder `403`. Se o cookie HttpOnly `marcai_access_token` estiver ausente ou inválido, o backend deve responder `401`. Telas privadas devem depender de `GET /api/v1/auth/me`, não da existência de `XSRF-TOKEN`.
 
 ---
 

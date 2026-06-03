@@ -5,6 +5,13 @@ import {
   getApiFieldErrors,
 } from '@/shared/api/httpClient'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/components/ui/dialog'
 import { BusinessHourForm } from '@/features/availability/components/BusinessHourForm'
 import { BusinessHoursList } from '@/features/availability/components/BusinessHoursList'
 import type { BusinessHourFormValues } from '@/features/availability/components/businessHourUtils'
@@ -199,15 +206,49 @@ export function AvailabilityPage() {
       ) : null}
 
       <BusinessHourForm
-        key={`${editingBusinessHour?.id ?? 'new'}-${formResetSignal}`}
+        key={`new-${formResetSignal}`}
         apiFieldErrors={formFieldErrors}
         blockedDayOfWeeks={blockedDayOfWeeks}
         error={formError}
-        initialBusinessHour={editingBusinessHour}
+        initialBusinessHour={null}
         isSubmitting={isSubmitting}
         onCancelEdit={resetForm}
         onSubmit={handleSubmitBusinessHour}
       />
+
+      <Dialog
+        open={editingBusinessHour !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            resetForm()
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar horário</DialogTitle>
+            <DialogDescription>
+              Atualize o horário de funcionamento selecionado.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingBusinessHour ? (
+            <BusinessHourForm
+              key={`${editingBusinessHour.id}-${formResetSignal}`}
+              apiFieldErrors={formFieldErrors}
+              blockedDayOfWeeks={blockedDayOfWeeks}
+              error={formError}
+              hideHeader
+              idPrefix="edit-business-hour"
+              initialBusinessHour={editingBusinessHour}
+              isSubmitting={isSubmitting}
+              onCancelEdit={resetForm}
+              onSubmit={handleSubmitBusinessHour}
+              presentation="plain"
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <BusinessHoursList
         actionError={actionError}

@@ -12,6 +12,8 @@ export function useSessionQuery() {
   return useQuery({
     queryKey: authQueryKeys.session(),
     queryFn: authApi.getSession,
+    refetchOnMount: 'always',
+    staleTime: 0,
     retry: (failureCount, error) => {
       if (isAuthStatus(error, 401) || isAuthStatus(error, 403)) {
         return false

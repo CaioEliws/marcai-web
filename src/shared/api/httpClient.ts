@@ -6,6 +6,8 @@ const privateDashboardPathPrefix = '/api/v1/dashboard/'
 const xsrfCookieName = 'XSRF-TOKEN'
 const xsrfHeaderName = 'X-XSRF-TOKEN'
 const mutableMethods = new Set(['DELETE', 'PATCH', 'POST', 'PUT'])
+const csrfEndpoint = '/api/v1/auth/csrf'
+let csrfTokenRequest: Promise<string | undefined> | null = null
 
 const apiErrorSchema = z.object({
   fieldErrors: z
@@ -116,6 +118,36 @@ function buildApiUrl(path: string): URL {
   return new URL(path, baseUrl)
 }
 
+async function refreshXsrfToken() {
+  csrfTokenRequest ??= fetch(buildApiUrl(csrfEndpoint), {
+    credentials: 'include',
+    method: 'GET',
+    cache: 'no-store',
+  })
+    .then((response) => {
+      if (!response.ok) {
+        return undefined
+      }
+
+      return getCookieValue(xsrfCookieName)
+    })
+    .finally(() => {
+      csrfTokenRequest = null
+    })
+
+  return csrfTokenRequest
+}
+
+async function getFreshXsrfTokenForMutation() {
+  const refreshedToken = await refreshXsrfToken()
+
+  if (refreshedToken) {
+    return refreshedToken
+  }
+
+  return getCookieValue(xsrfCookieName)
+}
+
 async function parseJson(response: Response): Promise<unknown> {
   const text = await response.text()
 
@@ -147,7 +179,7 @@ async function request<TSchema extends z.ZodType>(
   }
 
   if (shouldSendXsrfToken(path, method) && !headers.has(xsrfHeaderName)) {
-    const xsrfToken = getCookieValue(xsrfCookieName)
+    const xsrfToken = await getFreshXsrfTokenForMutation()
 
     if (xsrfToken) {
       headers.set(xsrfHeaderName, xsrfToken)

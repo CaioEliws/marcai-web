@@ -9,7 +9,7 @@ import {
   Users,
   User,
 } from 'lucide-react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/utils'
 import { useAccountProfileQuery } from '@/features/account/hooks/useAccount'
@@ -131,6 +131,18 @@ export function PrivateLayout() {
     profile?.avatarUrl,
     accountProfileQuery.dataUpdatedAt,
   )
+
+  if (sessionQuery.isPending) {
+    return (
+      <main className="grid min-h-svh place-items-center px-6 py-10">
+        <p className="text-sm text-muted-foreground">Carregando sessão...</p>
+      </main>
+    )
+  }
+
+  if (!session) {
+    return <Navigate to="/login" replace />
+  }
 
   async function handleLogout() {
     try {

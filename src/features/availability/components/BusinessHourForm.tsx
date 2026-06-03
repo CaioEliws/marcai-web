@@ -30,10 +30,13 @@ type BusinessHourFormProps = {
   apiFieldErrors: BusinessHourFormFieldErrors
   blockedDayOfWeeks: number[]
   error: string | null
+  hideHeader?: boolean
+  idPrefix?: string
   initialBusinessHour: BusinessHour | null
   isSubmitting: boolean
   onCancelEdit: () => void
   onSubmit: (values: BusinessHourFormValues) => Promise<void>
+  presentation?: 'card' | 'plain'
 }
 
 function getInitialValues(businessHour: BusinessHour | null) {
@@ -52,10 +55,13 @@ export function BusinessHourForm({
   apiFieldErrors,
   blockedDayOfWeeks,
   error,
+  hideHeader = false,
+  idPrefix = 'business-hour',
   initialBusinessHour,
   isSubmitting,
   onCancelEdit,
   onSubmit,
+  presentation = 'card',
 }: BusinessHourFormProps) {
   const initialValues = getInitialValues(initialBusinessHour)
   const [dayOfWeek, setDayOfWeek] = useState(initialValues.dayOfWeek)
@@ -72,6 +78,12 @@ export function BusinessHourForm({
   )
   const hasNoDaysAvailable = availableDays.length === 0 && !isEditing
   const visibleFieldErrors = { ...apiFieldErrors, ...fieldErrors }
+  const dayInputId = `${idPrefix}-day`
+  const dayErrorId = `${idPrefix}-day-error`
+  const openingInputId = `${idPrefix}-opening`
+  const openingErrorId = `${idPrefix}-opening-error`
+  const closingInputId = `${idPrefix}-closing`
+  const closingErrorId = `${idPrefix}-closing-error`
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -124,9 +136,8 @@ export function BusinessHourForm({
     await onSubmit(parsedPayload.data)
   }
 
-  return (
-    <Card>
-      <CardHeader>
+  const header = hideHeader ? null : (
+    <CardHeader>
         <CardTitle>{isEditing ? 'Editar horario' : 'Novo horario'}</CardTitle>
         <CardDescription>
           {isEditing
@@ -134,8 +145,9 @@ export function BusinessHourForm({
             : 'Cadastre os dias e horarios disponiveis para agendamento.'}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form className="grid gap-4" onSubmit={handleSubmit} noValidate>
+  )
+  const form = (
+    <form className="grid gap-4" onSubmit={handleSubmit} noValidate>
           {error ? (
             <Alert className="border-destructive/50 text-destructive">
               <AlertDescription>{error}</AlertDescription>
@@ -153,9 +165,9 @@ export function BusinessHourForm({
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="business-hour-day">Dia da semana</Label>
+              <Label htmlFor={dayInputId}>Dia da semana</Label>
               <select
-                id="business-hour-day"
+                id={dayInputId}
                 value={dayOfWeek}
                 onChange={(event) => {
                   setDayOfWeek(event.target.value)
@@ -172,7 +184,7 @@ export function BusinessHourForm({
                 aria-invalid={Boolean(visibleFieldErrors.dayOfWeek)}
                 aria-describedby={
                   visibleFieldErrors.dayOfWeek
-                    ? 'business-hour-day-error'
+                    ? dayErrorId
                     : undefined
                 }
                 disabled={isSubmitting || hasNoDaysAvailable}
@@ -186,7 +198,7 @@ export function BusinessHourForm({
               </select>
               {visibleFieldErrors.dayOfWeek ? (
                 <p
-                  id="business-hour-day-error"
+                  id={dayErrorId}
                   className="text-sm text-destructive"
                 >
                   {visibleFieldErrors.dayOfWeek}
@@ -195,9 +207,9 @@ export function BusinessHourForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="business-hour-opening">Abertura</Label>
+              <Label htmlFor={openingInputId}>Abertura</Label>
               <Input
-                id="business-hour-opening"
+                id={openingInputId}
                 type="time"
                 value={openingTime}
                 onChange={(event) => {
@@ -210,14 +222,14 @@ export function BusinessHourForm({
                 aria-invalid={Boolean(visibleFieldErrors.openingTime)}
                 aria-describedby={
                   visibleFieldErrors.openingTime
-                    ? 'business-hour-opening-error'
+                    ? openingErrorId
                     : undefined
                 }
                 disabled={isSubmitting || hasNoDaysAvailable}
               />
               {visibleFieldErrors.openingTime ? (
                 <p
-                  id="business-hour-opening-error"
+                  id={openingErrorId}
                   className="text-sm text-destructive"
                 >
                   {visibleFieldErrors.openingTime}
@@ -226,9 +238,9 @@ export function BusinessHourForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="business-hour-closing">Fechamento</Label>
+              <Label htmlFor={closingInputId}>Fechamento</Label>
               <Input
-                id="business-hour-closing"
+                id={closingInputId}
                 type="time"
                 value={closingTime}
                 onChange={(event) => {
@@ -241,14 +253,14 @@ export function BusinessHourForm({
                 aria-invalid={Boolean(visibleFieldErrors.closingTime)}
                 aria-describedby={
                   visibleFieldErrors.closingTime
-                    ? 'business-hour-closing-error'
+                    ? closingErrorId
                     : undefined
                 }
                 disabled={isSubmitting || hasNoDaysAvailable}
               />
               {visibleFieldErrors.closingTime ? (
                 <p
-                  id="business-hour-closing-error"
+                  id={closingErrorId}
                   className="text-sm text-destructive"
                 >
                   {visibleFieldErrors.closingTime}
@@ -277,7 +289,21 @@ export function BusinessHourForm({
             </Button>
           </div>
         </form>
-      </CardContent>
+  )
+
+  if (presentation === 'plain') {
+    return (
+      <div className="grid gap-4">
+        {header}
+        {form}
+      </div>
+    )
+  }
+
+  return (
+    <Card>
+      {header}
+      <CardContent>{form}</CardContent>
     </Card>
   )
 }

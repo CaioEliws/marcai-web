@@ -248,3 +248,168 @@ test('remover horário em availability usa AlertDialog', async ({ page }) => {
   ).toBeVisible()
   expect(nativeDialogOpened).toBe(false)
 })
+
+test('editar horário em availability abre Dialog com dados preenchidos', async ({
+  page,
+}) => {
+  await mockAuthenticatedShell(page)
+
+  await page.route('**/api/v1/dashboard/business-hours', async (route) => {
+    await route.fulfill({
+      body: JSON.stringify([
+        {
+          active: true,
+          closingTime: '18:00:00',
+          dayName: 'Segunda-feira',
+          dayOfWeek: 1,
+          id: businessHourId,
+          openingTime: '09:00:00',
+        },
+      ]),
+      contentType: 'application/json',
+      status: 200,
+    })
+  })
+
+  await page.goto('/dashboard/availability', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: 'Editar' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await expect(
+    dialog.getByRole('heading', { name: 'Editar horário' }),
+  ).toBeVisible()
+  await expect(dialog.getByLabel('Dia da semana')).toHaveValue('1')
+  await expect(dialog.getByLabel('Abertura')).toHaveValue('09:00')
+  await expect(dialog.getByLabel('Fechamento')).toHaveValue('18:00')
+})
+
+test('rota privada com auth/me 401 redireciona sem renderizar painel', async ({
+  page,
+}) => {
+  let dashboardRequestCount = 0
+
+  await page.route('**/api/v1/auth/me', async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ message: 'Unauthorized' }),
+      contentType: 'application/json',
+      status: 401,
+    })
+  })
+
+  await page.route('**/api/v1/dashboard/**', async (route) => {
+    dashboardRequestCount += 1
+    await route.fulfill({
+      body: JSON.stringify({ message: 'Não autenticado.' }),
+      contentType: 'application/json',
+      status: 401,
+    })
+  })
+
+  await page.goto('/dashboard/availability', { waitUntil: 'domcontentloaded' })
+
+  await expect(page).toHaveURL(/\/login$/)
+  await expect(page.getByText('Painel privado')).toHaveCount(0)
+  expect(dashboardRequestCount).toBe(0)
+})
+
+test('mutação privada busca CSRF antes do POST e envia X-XSRF-TOKEN', async ({
+  page,
+}) => {
+  await mockAuthenticatedShell(page)
+  const callOrder: string[] = []
+  let xsrfHeader: string | undefined
+  let postPayload: unknown
+
+  await page.route('**/api/v1/auth/csrf', async (route) => {
+    callOrder.push('csrf')
+    await route.fulfill({
+      headers: {
+        'Set-Cookie': 'XSRF-TOKEN=csrf-token-e2e; Path=/; SameSite=Lax',
+      },
+      status: 204,
+    })
+  })
+
+  await page.route('**/api/v1/dashboard/business-hours', async (route) => {
+    if (route.request().method() === 'POST') {
+      callOrder.push('post')
+      xsrfHeader = route.request().headers()['x-xsrf-token']
+      postPayload = route.request().postDataJSON()
+      await route.fulfill({
+        body: JSON.stringify({
+          active: true,
+          closingTime: '18:00:00',
+          dayName: 'Segunda-feira',
+          dayOfWeek: 1,
+          id: businessHourId,
+          openingTime: '09:00:00',
+        }),
+        contentType: 'application/json',
+        status: 201,
+      })
+      return
+    }
+
+    await route.fulfill({
+      body: JSON.stringify([]),
+      contentType: 'application/json',
+      status: 200,
+    })
+  })
+
+  await page.goto('/dashboard/availability', { waitUntil: 'domcontentloaded' })
+  await page.getByLabel('Dia da semana').selectOption('1')
+  await page.getByLabel('Abertura').fill('09:00')
+  await page.getByLabel('Fechamento').fill('18:00')
+  await page.getByRole('button', { name: 'Adicionar horario' }).click()
+
+  await expect(page.getByText('Horario adicionado com sucesso.')).toBeVisible()
+  expect(callOrder).toEqual(['csrf', 'post'])
+  expect(xsrfHeader).toBe('csrf-token-e2e')
+  expect(postPayload).toEqual({
+    closingTime: '18:00:00',
+    dayOfWeek: 1,
+    openingTime: '09:00:00',
+  })
+  expect(JSON.stringify(postPayload)).not.toContain('businessId')
+})
+
+test('403 em mutação privada não aparece como sessão expirada', async ({
+  page,
+}) => {
+  await mockAuthenticatedShell(page)
+
+  await page.route('**/api/v1/auth/csrf', async (route) => {
+    await route.fulfill({ status: 204 })
+  })
+
+  await page.route('**/api/v1/dashboard/business-hours', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        body: JSON.stringify({ message: 'CSRF token inválido.' }),
+        contentType: 'application/json',
+        status: 403,
+      })
+      return
+    }
+
+    await route.fulfill({
+      body: JSON.stringify([]),
+      contentType: 'application/json',
+      status: 200,
+    })
+  })
+
+  await page.goto('/dashboard/availability', { waitUntil: 'domcontentloaded' })
+  await page.getByLabel('Dia da semana').selectOption('1')
+  await page.getByLabel('Abertura').fill('09:00')
+  await page.getByLabel('Fechamento').fill('18:00')
+  await page.getByRole('button', { name: 'Adicionar horario' }).click()
+
+  await expect(
+    page.getByText('Voce nao tem permissao para executar esta acao.'),
+  ).toBeVisible()
+  await expect(page.getByText('Sua sessao expirou. Entre novamente para continuar.'))
+    .toHaveCount(0)
+})

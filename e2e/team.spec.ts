@@ -33,6 +33,15 @@ async function mockSession(page: Page, role: 'OWNER' | 'PROFESSIONAL') {
       status: 200,
     })
   })
+
+  await page.route('**/api/v1/auth/csrf', async (route) => {
+    await route.fulfill({
+      headers: {
+        'Set-Cookie': 'XSRF-TOKEN=team-csrf-token; Path=/; SameSite=Lax',
+      },
+      status: 204,
+    })
+  })
 }
 
 async function mockDashboardBasics(page: Page) {
@@ -475,7 +484,7 @@ test('cancelar convite abre AlertDialog e chama endpoint correto', async ({
     .getByRole('button', { name: 'Cancelar convite' })
     .click()
 
-  expect(cancelCalled).toBe(true)
+  await expect.poll(() => cancelCalled).toBe(true)
 })
 
 test('reenviar convite chama endpoint correto', async ({ page }) => {
@@ -511,7 +520,7 @@ test('reenviar convite chama endpoint correto', async ({ page }) => {
     .getByRole('button', { name: 'Reenviar' })
     .click()
 
-  expect(resendCalled).toBe(true)
+  await expect.poll(() => resendCalled).toBe(true)
 })
 
 test('convites arquiváveis mostram Remover do histórico e pendente não mostra', async ({
@@ -584,7 +593,7 @@ test('remover convite do histórico abre AlertDialog e chama PATCH archive sem p
     .getByRole('button', { name: 'Remover' })
     .click()
 
-  expect(archiveCalled).toBe(true)
+  await expect.poll(() => archiveCalled).toBe(true)
   expect(archivePayload).toBeNull()
 })
 
@@ -724,7 +733,7 @@ test('desativar profissional abre AlertDialog e chama endpoint correto', async (
     .getByRole('button', { name: 'Desativar' })
     .click()
 
-  expect(disableCalled).toBe(true)
+  await expect.poll(() => disableCalled).toBe(true)
 })
 
 test('criar convite chama POST sem businessId, role ou userId', async ({
