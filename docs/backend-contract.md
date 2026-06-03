@@ -430,6 +430,163 @@ Regras frontend:
 * role pode controlar UX, mas não autorização real
 * alterações de membros devem ser tratadas como operação sensível
 
+## Team
+
+Fluxo privado para OWNER gerenciar profissionais da empresa.
+
+Endpoints privados:
+
+```txt
+POST  /api/v1/dashboard/team/invitations
+GET   /api/v1/dashboard/team
+GET   /api/v1/dashboard/team/invitations
+PATCH /api/v1/dashboard/team/{memberId}/disable
+PATCH /api/v1/dashboard/team/{memberId}/enable
+PATCH /api/v1/dashboard/team/invitations/{id}/cancel
+POST  /api/v1/dashboard/team/invitations/{id}/resend
+PATCH /api/v1/dashboard/team/invitations/{id}/archive
+```
+
+Create invitation payload:
+
+```json
+{
+  "email": "funcionario@email.com",
+  "name": "João Silva"
+}
+```
+
+Invitation response:
+
+```json
+{
+  "id": "uuid",
+  "email": "funcionario@email.com",
+  "name": "João Silva",
+  "role": "PROFESSIONAL",
+  "status": "PENDING",
+  "expiresAt": "2026-06-10T10:00:00",
+  "createdAt": "2026-06-01T10:00:00",
+  "emailSent": true,
+  "message": "Convite enviado com sucesso.",
+  "inviteUrl": null
+}
+```
+
+Quando o envio de e-mail estiver desabilitado ou o provedor falhar, o backend
+cria o convite e retorna:
+
+```json
+{
+  "id": "uuid",
+  "email": "funcionario@email.com",
+  "name": "João Silva",
+  "role": "PROFESSIONAL",
+  "status": "EMAIL_FAILED",
+  "expiresAt": "2026-06-10T10:00:00",
+  "emailSent": false,
+  "message": "Convite criado, mas o e-mail não foi enviado. Verifique a configuração de e-mail.",
+  "inviteUrl": null
+}
+```
+
+Em dev/test, o backend pode retornar `inviteUrl` para debug. Quando existir,
+pode ser absoluta ou relativa iniciando com `/invite/`. O frontend deve validar
+antes de exibir, aceitar `null` e nunca duplicar a origem.
+
+Status possíveis para convites:
+
+```txt
+PENDING
+ACCEPTED
+EXPIRED
+CANCELED
+EMAIL_FAILED
+```
+
+Regras de ações:
+
+* `PENDING` e `EMAIL_FAILED` podem permitir reenviar e cancelar convite
+* `ACCEPTED`, `CANCELED` e `EXPIRED` devem ser exibidos sem ação principal
+* `inviteUrl` é opcional/null e deve ser exibido apenas quando válido
+* `message` é opcional/null e não deve ser exibido com detalhes técnicos
+* `EMAIL_FAILED`, `CANCELED` e `EXPIRED` podem permitir remover do histórico via archive
+* `PENDING` deve ser cancelado antes de ser arquivado
+* reenvio, cancelamento e arquivamento são operações privadas e usam CSRF via `X-XSRF-TOKEN`
+
+Team member response:
+
+```json
+{
+  "id": "uuid",
+  "userId": "uuid",
+  "name": "João Silva",
+  "email": "funcionario@email.com",
+  "role": "PROFESSIONAL",
+  "active": true,
+  "createdAt": "2026-06-01T10:00:00"
+}
+```
+
+Regras frontend:
+
+* não enviar `businessId`, `userId` ou `role`
+* somente OWNER/ADMIN deve ver a tela de equipe no frontend
+* PROFESSIONAL deve manter acesso visual limitado a Dashboard, Agendamentos e Perfil
+* backend continua sendo fonte de verdade para autorização
+* mutações privadas usam CSRF via `X-XSRF-TOKEN`
+
+## Invitation Accept
+
+Fluxo público para aceitar convite de equipe.
+
+Endpoints públicos:
+
+```txt
+GET  /api/v1/auth/invitations/{token}
+POST /api/v1/auth/invitations/{token}/accept
+```
+
+Invite details response:
+
+```json
+{
+  "email": "funcionario@email.com",
+  "name": "João Silva",
+  "businessName": "Barbearia do Caio",
+  "role": "PROFESSIONAL",
+  "expiresAt": "2026-06-10T10:00:00"
+}
+```
+
+Accept payload:
+
+```json
+{
+  "name": "João Silva",
+  "password": "senhaSegura123",
+  "confirmPassword": "senhaSegura123"
+}
+```
+
+Accept response:
+
+```json
+{
+  "message": "Convite aceito com sucesso.",
+  "email": "funcionario@email.com",
+  "businessName": "Barbearia do Caio",
+  "role": "PROFESSIONAL"
+}
+```
+
+Regras frontend:
+
+* rota pública `/invite/:token`
+* não usar CSRF no aceite público
+* não logar token, senha ou payload sensível
+* tratar convite inválido/expirado com mensagem amigável
+
 ---
 
 ## Account Profile

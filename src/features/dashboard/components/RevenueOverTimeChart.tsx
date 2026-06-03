@@ -1,11 +1,4 @@
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts'
 import {
   Card,
   CardContent,
@@ -13,33 +6,37 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/components/ui/card'
-import { EmptyDashboardState } from './EmptyDashboardState'
 import { MeasuredChartFrame } from './MeasuredChartFrame'
-import type { RevenueByServiceItem } from '../utils/dashboardMetrics'
+import { EmptyDashboardState } from './EmptyDashboardState'
+import type { RevenueOverTimeItem } from '../utils/dashboardMetrics'
 import { formatCurrency } from '../utils/dashboardFormatters'
 
-type RevenueByServiceChartProps = {
-  data: RevenueByServiceItem[]
+type RevenueOverTimeChartProps = {
+  data: RevenueOverTimeItem[]
+  periodLabel: string
 }
 
-export function RevenueByServiceChart({ data }: RevenueByServiceChartProps) {
-  const visibleData = data.filter((item) => item.revenue > 0).slice(0, 6)
+export function RevenueOverTimeChart({
+  data,
+  periodLabel,
+}: RevenueOverTimeChartProps) {
+  const visibleData = data.filter((item) => item.revenue > 0)
 
   return (
     <Card className="min-w-0">
       <CardHeader>
-        <CardTitle>Receita por serviço</CardTitle>
+        <CardTitle>Receita ao longo do tempo</CardTitle>
         <CardDescription>
-          Serviços com maior receita realizada no período.
+          Receita realizada em atendimentos concluídos · {periodLabel}
         </CardDescription>
       </CardHeader>
       <CardContent className="min-w-0">
         {visibleData.length === 0 ? (
           <EmptyDashboardState
-            title="Ainda não há receita por serviço."
-            description="Conclua atendimentos com preço cadastrado para comparar os serviços."
-            actionLabel="Gerenciar serviços"
-            actionTo="/dashboard/services"
+            title="Ainda não há receita realizada neste período."
+            description="Conclua atendimentos com preço cadastrado para acompanhar a evolução da receita."
+            actionLabel="Ver agendamentos"
+            actionTo="/dashboard/appointments"
           />
         ) : (
           <MeasuredChartFrame className="h-72 min-h-72 overflow-hidden">
@@ -48,31 +45,25 @@ export function RevenueByServiceChart({ data }: RevenueByServiceChartProps) {
                 width={width}
                 height={height}
                 data={visibleData}
-                layout="vertical"
-                margin={{ bottom: 8, left: 16, right: 16, top: 8 }}
+                margin={{ bottom: 8, left: 8, right: 8, top: 8 }}
               >
-                <CartesianGrid stroke="var(--border)" horizontal={false} />
+                <CartesianGrid stroke="var(--border)" vertical={false} />
                 <XAxis
-                  type="number"
+                  dataKey="label"
+                  stroke="var(--muted-foreground)"
+                  tickLine={false}
+                  tickMargin={8}
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis
                   stroke="var(--muted-foreground)"
                   tickFormatter={(value) => formatCurrency(Number(value))}
                   tickLine={false}
                   tick={{ fontSize: 12 }}
-                />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  stroke="var(--muted-foreground)"
-                  tickLine={false}
-                  tick={{ fontSize: 12 }}
-                  width={110}
+                  width={84}
                 />
                 <Tooltip content={<RevenueTooltip />} />
-                <Bar
-                  dataKey="revenue"
-                  fill="var(--primary)"
-                  radius={[0, 6, 6, 0]}
-                />
+                <Bar dataKey="revenue" fill="var(--primary)" radius={[6, 6, 0, 0]} />
               </BarChart>
             )}
           </MeasuredChartFrame>
@@ -87,7 +78,7 @@ function RevenueTooltip({
   payload,
 }: {
   active?: boolean
-  payload?: Array<{ payload: RevenueByServiceItem }>
+  payload?: Array<{ payload: RevenueOverTimeItem }>
 }) {
   if (!active || !payload?.[0]) {
     return null
@@ -97,11 +88,8 @@ function RevenueTooltip({
 
   return (
     <div className="rounded-md border bg-background px-3 py-2 text-sm shadow-sm">
-      <p className="font-medium">{item.name}</p>
+      <p className="font-medium">{item.label}</p>
       <p className="text-muted-foreground">{formatCurrency(item.revenue)}</p>
-      <p className="text-xs text-muted-foreground">
-        {item.appointments} agendamentos
-      </p>
     </div>
   )
 }

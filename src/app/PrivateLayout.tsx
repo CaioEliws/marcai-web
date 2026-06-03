@@ -6,6 +6,7 @@ import {
   LogOut,
   Menu,
   Scissors,
+  Users,
   User,
 } from 'lucide-react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
@@ -14,12 +15,35 @@ import { cn } from '@/shared/lib/utils'
 import { useAccountProfileQuery } from '@/features/account/hooks/useAccount'
 import { useLogoutMutation, useSessionQuery } from '@/features/auth/hooks/useAuth'
 
+const ownerRoles = ['ADMIN', 'OWNER']
+
 const navigationItems = [
   { to: '/dashboard', label: 'Dashboard', icon: Home, end: true },
-  { to: '/dashboard/services', label: 'Serviços', icon: Scissors },
+  {
+    to: '/dashboard/services',
+    label: 'Serviços',
+    icon: Scissors,
+    roles: ownerRoles,
+  },
   { to: '/dashboard/appointments', label: 'Agendamentos', icon: Calendar },
-  { to: '/dashboard/availability', label: 'Horários', icon: Clock },
-  { to: '/dashboard/public-link', label: 'Link público', icon: LinkIcon },
+  {
+    to: '/dashboard/availability',
+    label: 'Horários',
+    icon: Clock,
+    roles: ownerRoles,
+  },
+  {
+    to: '/dashboard/public-link',
+    label: 'Link público',
+    icon: LinkIcon,
+    roles: ownerRoles,
+  },
+  {
+    to: '/dashboard/team',
+    label: 'Equipe',
+    icon: Users,
+    roles: ownerRoles,
+  },
   { to: '/dashboard/profile', label: 'Perfil', icon: User },
 ]
 
@@ -96,6 +120,13 @@ export function PrivateLayout() {
   const profile = accountProfileQuery.data
   const userName = profile?.name ?? session?.name ?? 'Usuário'
   const userRole = profile?.role ?? session?.role ?? 'Conta'
+  const navigation = navigationItems.filter((item) => {
+    if (!item.roles) {
+      return true
+    }
+
+    return session?.role ? item.roles.includes(session.role) : false
+  })
   const avatarSrc = buildAvatarSrc(
     profile?.avatarUrl,
     accountProfileQuery.dataUpdatedAt,
@@ -118,7 +149,7 @@ export function PrivateLayout() {
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-4" aria-label="Principal">
-          {navigationItems.map((item) => (
+          {navigation.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -205,7 +236,7 @@ export function PrivateLayout() {
             className="flex gap-2 overflow-x-auto border-t px-4 py-2 lg:hidden"
             aria-label="Principal"
           >
-            {navigationItems.map((item) => (
+            {navigation.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

@@ -1,5 +1,6 @@
 import type { z } from 'zod'
 import type {
+  authRoleSchema,
   loginPayloadSchema,
   loginResponseSchema,
   meResponseSchema,
@@ -7,6 +8,7 @@ import type {
   registerResponseSchema,
 } from '../schemas/auth.schema'
 
+export type AuthRole = z.infer<typeof authRoleSchema>
 export type LoginPayload = z.infer<typeof loginPayloadSchema>
 export type LoginResponse = z.infer<typeof loginResponseSchema>
 export type RegisterPayload = z.infer<typeof registerPayloadSchema>

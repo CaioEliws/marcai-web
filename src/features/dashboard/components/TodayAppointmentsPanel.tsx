@@ -11,29 +11,30 @@ import {
 } from '@/shared/components/ui/card'
 import type { Appointment } from '@/features/appointments/types/appointment.type'
 import {
+  formatCurrency,
   formatShortTime,
   getAppointmentStatusLabel,
   getAppointmentStatusVariant,
-} from './dashboardUtils'
+} from '../utils/dashboardFormatters'
 
-type TodayAppointmentsProps = {
+type TodayAppointmentsPanelProps = {
   appointments: Appointment[]
   isLoading: boolean
   todayDate: string
 }
 
-export function TodayAppointments({
+export function TodayAppointmentsPanel({
   appointments,
   isLoading,
   todayDate,
-}: TodayAppointmentsProps) {
+}: TodayAppointmentsPanelProps) {
   return (
     <Card>
       <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <CardTitle>Agendamentos de hoje</CardTitle>
+          <CardTitle>Operação de hoje</CardTitle>
           <CardDescription>
-            Próximos horários do dia, ordenados por início.
+            Próximos horários, clientes e status da agenda do dia.
           </CardDescription>
         </div>
         <Button asChild variant="outline" size="sm">
@@ -45,14 +46,15 @@ export function TodayAppointments({
       <CardContent>
         {isLoading ? (
           <Alert>
-            <AlertDescription>Carregando agendamentos...</AlertDescription>
+            <AlertDescription>Carregando agendamentos de hoje...</AlertDescription>
           </Alert>
         ) : null}
 
         {!isLoading && appointments.length === 0 ? (
           <Alert>
             <AlertDescription>
-              Nenhum agendamento encontrado para hoje.
+              Ainda não há agendamentos para hoje. Crie um agendamento manual ou
+              compartilhe seu link público.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -62,21 +64,30 @@ export function TodayAppointments({
             {appointments.map((appointment) => (
               <div
                 key={appointment.id}
-                className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-lg border p-4 lg:flex-row lg:items-center lg:justify-between"
               >
                 <div className="min-w-0">
-                  <p className="font-medium">{appointment.clientName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {appointment.serviceName}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium">{appointment.clientName}</p>
+                    <Badge variant={getAppointmentStatusVariant(appointment.status)}>
+                      {getAppointmentStatusLabel(appointment.status)}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {appointment.clientPhone}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium">
-                    {formatShortTime(appointment.startTime)}
-                  </span>
-                  <Badge variant={getAppointmentStatusVariant(appointment.status)}>
-                    {getAppointmentStatusLabel(appointment.status)}
-                  </Badge>
+                <div className="grid gap-1 text-sm lg:text-right">
+                  <p className="font-medium">
+                    {formatShortTime(appointment.startTime)} às{' '}
+                    {formatShortTime(appointment.endTime)}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {appointment.serviceName} ·{' '}
+                    {appointment.servicePrice === null
+                      ? 'Preço não informado'
+                      : formatCurrency(appointment.servicePrice)}
+                  </p>
                 </div>
               </div>
             ))}
